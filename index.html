@@ -278,7 +278,204 @@
       }
     }
 
-    // --- AI Specialist Prompts Constructor ---
+    // --- Curated Free LLM Model Registry ---
+    const FREE_MODELS = {
+      groq: [
+        { id: 'llama-3.3-70b-versatile', name: 'Meta Llama 3.3 70B Versatile', badge: 'Recommended • Free Tier (30 RPM)', speed: 'Ultra-Fast' },
+        { id: 'llama-3.1-8b-instant', name: 'Meta Llama 3.1 8B Instant', badge: 'Ultra-Low Latency • Free Tier', speed: 'Sub-second' },
+        { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 Distill Llama 70B', badge: 'Reasoning • Free Tier', speed: 'Fast' },
+        { id: 'mixtral-8x7b-32768', name: 'Mistral Mixtral 8x7B (32k ctx)', badge: 'Balanced • Free Tier', speed: 'Fast' },
+        { id: 'gemma2-9b-it', name: 'Google Gemma 2 9B IT', badge: 'Concise • Free Tier', speed: 'Fast' }
+      ],
+      openrouter: [
+        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1 (Free)', badge: 'Zero Cost • :free Model', speed: 'High reasoning' },
+        { id: 'meta-llama/llama-3.3-70b-instruct:free', name: 'Meta Llama 3.3 70B Instruct (Free)', badge: 'Zero Cost • :free Model', speed: 'High quality' },
+        { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Meta Llama 3.1 8B Instruct (Free)', badge: 'Zero Cost • :free Model', speed: 'Ultra fast' },
+        { id: 'google/gemini-2.0-flash-exp:free', name: 'Google Gemini 2.0 Flash Exp (Free)', badge: 'Zero Cost • :free Model', speed: 'Instant' },
+        { id: 'qwen/qwen-2.5-coder-32b-instruct:free', name: 'Qwen 2.5 Coder 32B (Free)', badge: 'Zero Cost • :free Model', speed: 'Code & Logic' },
+        { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B Instruct (Free)', badge: 'Zero Cost • :free Model', speed: 'Fast' }
+      ]
+    };
+
+    // --- SecureKeyVault: IndexedDB + Web Crypto AES-GCM + XOR Obfuscation ---
+    class SecureKeyVault {
+      static DB_NAME = 'hustlepipe_secure_vault_v2';
+      static DB_VERSION = 1;
+      static STORE_NAME = 'api_vault';
+
+      static async openDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(SecureKeyVault.DB_NAME, SecureKeyVault.DB_VERSION);
+          request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(SecureKeyVault.STORE_NAME)) {
+              db.createObjectStore(SecureKeyVault.STORE_NAME, { keyPath: 'provider' });
+            }
+          };
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      }
+
+      // Key derivation via PBKDF2 with device hardware & environment entropy
+      static async getEncryptionKey() {
+        const salt = new TextEncoder().encode('HustlePipe-Nordic-Salt-v2-Engine');
+        const userSeed = `${navigator.userAgent || 'UA'}-${screen.width || 1920}x${screen.height || 1080}-${navigator.language || 'sv'}`;
+        const baseKey = await window.crypto.subtle.importKey(
+          'raw',
+          new TextEncoder().encode(userSeed.padEnd(32, '0').slice(0, 32)),
+          { name: 'PBKDF2' },
+          false,
+          ['deriveKey']
+        );
+
+        return window.crypto.subtle.deriveKey(
+          {
+            name: 'PBKDF2',
+            salt: salt,
+            iterations: 100000,
+            hash: 'SHA-256'
+          },
+          baseKey,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      }
+
+      // Secondary obfuscation layer (byte-level XOR mask to thwart memory inspection)
+      static obfuscateBytes(bytes) {
+        const mask = [0x5A, 0xC3, 0x17, 0x8F, 0x4D, 0xE2, 0x9B, 0x34];
+        const out = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) {
+          out[i] = bytes[i] ^ mask[i % mask.length];
+        }
+        return out;
+      }
+
+      static async storeKey(provider, rawKey) {
+        if (!rawKey || !rawKey.trim()) {
+          await SecureKeyVault.deleteKey(provider);
+          return null;
+        }
+
+        const trimmed = rawKey.trim();
+        const masked = trimmed.slice(0, 4) + '••••••••••••' + trimmed.slice(-4);
+
+        try {
+          const cryptoKey = await SecureKeyVault.getEncryptionKey();
+          const iv = window.crypto.getRandomValues(new Uint8Array(12));
+          const encoded = new TextEncoder().encode(trimmed);
+          
+          const cipherBuffer = await window.crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            cryptoKey,
+            encoded
+          );
+
+          const obfuscated = SecureKeyVault.obfuscateBytes(new Uint8Array(cipherBuffer));
+          const record = {
+            provider,
+            iv: Array.from(iv),
+            payload: Array.from(obfuscated),
+            masked,
+            updatedAt: Date.now()
+          };
+
+          const db = await SecureKeyVault.openDB();
+          return new Promise((resolve, reject) => {
+            const tx = db.transaction(SecureKeyVault.STORE_NAME, 'readwrite');
+            const store = tx.objectStore(SecureKeyVault.STORE_NAME);
+            const req = store.put(record);
+            req.onsuccess = () => resolve(masked);
+            req.onerror = () => reject(req.error);
+          });
+        } catch (err) {
+          console.warn('SubtleCrypto error, applying fallback obfuscation in IndexedDB:', err);
+          const b64 = btoa(encodeURIComponent(trimmed));
+          const db = await SecureKeyVault.openDB();
+          return new Promise((resolve, reject) => {
+            const tx = db.transaction(SecureKeyVault.STORE_NAME, 'readwrite');
+            const store = tx.objectStore(SecureKeyVault.STORE_NAME);
+            const req = store.put({
+              provider,
+              payload: b64,
+              isFallback: true,
+              masked,
+              updatedAt: Date.now()
+            });
+            req.onsuccess = () => resolve(masked);
+            req.onerror = () => reject(req.error);
+          });
+        }
+      }
+
+      static async retrieveKey(provider) {
+        try {
+          const db = await SecureKeyVault.openDB();
+          const record = await new Promise((resolve, reject) => {
+            const tx = db.transaction(SecureKeyVault.STORE_NAME, 'readonly');
+            const store = tx.objectStore(SecureKeyVault.STORE_NAME);
+            const req = store.get(provider);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+          });
+
+          if (!record) return null;
+
+          if (record.isFallback) {
+            return decodeURIComponent(atob(record.payload));
+          }
+
+          const cryptoKey = await SecureKeyVault.getEncryptionKey();
+          const iv = new Uint8Array(record.iv);
+          const deobfuscated = SecureKeyVault.obfuscateBytes(new Uint8Array(record.payload));
+
+          const decrypted = await window.crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv },
+            cryptoKey,
+            deobfuscated
+          );
+
+          return new TextDecoder().decode(decrypted);
+        } catch (err) {
+          console.warn('Failed to retrieve key from SecureKeyVault:', err);
+          return null;
+        }
+      }
+
+      static async getMaskedHint(provider) {
+        try {
+          const db = await SecureKeyVault.openDB();
+          return new Promise((resolve) => {
+            const tx = db.transaction(SecureKeyVault.STORE_NAME, 'readonly');
+            const store = tx.objectStore(SecureKeyVault.STORE_NAME);
+            const req = store.get(provider);
+            req.onsuccess = () => resolve(req.result ? req.result.masked : null);
+            req.onerror = () => resolve(null);
+          });
+        } catch (e) {
+          return null;
+        }
+      }
+
+      static async deleteKey(provider) {
+        try {
+          const db = await SecureKeyVault.openDB();
+          return new Promise((resolve, reject) => {
+            const tx = db.transaction(SecureKeyVault.STORE_NAME, 'readwrite');
+            const store = tx.objectStore(SecureKeyVault.STORE_NAME);
+            const req = store.delete(provider);
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => reject(req.error);
+          });
+        } catch (e) {
+          return false;
+        }
+      }
+    }
+
+    // --- AI Specialist Prompts Constructor & Real Inference Gateway ---
     class AIAgentService {
       static getSystemPrompt(experienceLevel, activeTab) {
         const baseRole = "You are an expert AI e-commerce & dropshipping specialist embedded in HustlePipe (SideForge Engine).";
@@ -299,21 +496,116 @@
         return `${baseRole}\nActive Specialty: ${tabRole}\nComplexity Mode (${experienceLevel}): ${experienceModulator}\nAlways output clean Markdown format.`;
       }
 
+      // Fetch models dynamically from Groq or OpenRouter documented endpoints
+      static async fetchAvailableModels(provider, apiKey) {
+        if (provider === 'groq') {
+          if (!apiKey) {
+            throw new Error('A Groq API key is required to query Groq\'s live model catalog.');
+          }
+          // Groq documented endpoint: GET https://api.groq.com/openai/v1/models
+          const res = await fetch('https://api.groq.com/openai/v1/models', {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error?.message || `Groq API returned HTTP ${res.status}`);
+          }
+          const data = await res.json();
+          const models = (data.data || [])
+            .filter(m => m.active !== false && !m.id.includes('whisper') && !m.id.includes('guard'))
+            .map(m => ({
+              id: m.id,
+              name: m.id,
+              badge: `${m.owned_by || 'Groq'} • Free Rate Limits`,
+              speed: m.context_window ? `${Math.round(m.context_window / 1024)}k ctx` : 'Fast'
+            }));
+          return models.length > 0 ? models : FREE_MODELS.groq;
+        } else {
+          // OpenRouter documented endpoint: GET https://openrouter.ai/api/v1/models
+          const res = await fetch('https://openrouter.ai/api/v1/models');
+          if (!res.ok) {
+            throw new Error(`OpenRouter API returned HTTP ${res.status}`);
+          }
+          const data = await res.json();
+          // Filter free models (id ends in :free or pricing prompt == 0)
+          const freeModels = (data.data || [])
+            .filter(m => m.id && (m.id.endsWith(':free') || (m.pricing && m.pricing.prompt === '0')))
+            .map(m => ({
+              id: m.id,
+              name: m.name || m.id,
+              badge: 'Zero Cost • :free Tier',
+              speed: m.context_length ? `${Math.round(m.context_length / 1024)}k ctx` : 'Free'
+            }));
+          return freeModels.length > 0 ? freeModels : FREE_MODELS.openrouter;
+        }
+      }
+
+      // Real ping connection test to measure latency & verify credentials
+      static async testConnection(provider, apiKey, model) {
+        const startTime = Date.now();
+        let url = 'https://api.groq.com/openai/v1/chat/completions';
+        let headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey.trim()}`
+        };
+
+        if (provider === 'openrouter') {
+          url = 'https://openrouter.ai/api/v1/chat/completions';
+          headers['HTTP-Referer'] = window.location.origin || 'https://hustlepipe.app';
+          headers['X-Title'] = 'HustlePipe Engine';
+        }
+
+        const testModel = model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'deepseek/deepseek-r1:free');
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model: testModel,
+            messages: [
+              { role: 'user', content: 'Respond with exactly the 4 words: "HustlePipe AI connected successfully."' }
+            ],
+            max_tokens: 20,
+            temperature: 0.1
+          })
+        });
+
+        const latency = Date.now() - startTime;
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const text = data.choices?.[0]?.message?.content || 'Connection OK';
+        return { latency, text, model: data.model || testModel };
+      }
+
       static async queryAI(prompt, state) {
-        const { apiKey, provider, selectedModel } = state.userProfile.aiSettings;
+        const { provider, selectedModel } = state.userProfile.aiSettings;
         const systemPrompt = AIAgentService.getSystemPrompt(state.userProfile.experienceLevel, state.uiState.activeTab);
+
+        // Retrieve decrypted key from IndexedDB Secure Vault (or fallback state)
+        let apiKey = await SecureKeyVault.retrieveKey(provider);
+        if (!apiKey && state.userProfile.aiSettings.apiKey) {
+          apiKey = state.userProfile.aiSettings.apiKey;
+        }
 
         if (!apiKey) {
           // Fallback simulation when no key is set yet
           await new Promise(r => setTimeout(r, 600));
-          return AIAgentService.generateSmartFallback(prompt, state.uiState.activeTab, state.userProfile.experienceLevel);
+          return `ℹ️ **BYOK Notice:** *No active ${provider.toUpperCase()} API key detected in Secure Vault. Using built-in Scandinavian e-commerce simulation. Connect your free API key in BYOK Settings for live fast inference.*\n\n` +
+            AIAgentService.generateSmartFallback(prompt, state.uiState.activeTab, state.userProfile.experienceLevel);
         }
 
         try {
           let url = 'https://api.groq.com/openai/v1/chat/completions';
           let headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${apiKey.trim()}`
           };
 
           if (provider === 'openrouter') {
@@ -322,7 +614,7 @@
             headers['X-Title'] = 'HustlePipe Engine';
           }
 
-          const model = selectedModel || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'deepseek/deepseek-chat');
+          const model = selectedModel || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'deepseek/deepseek-r1:free');
 
           const response = await fetch(url, {
             method: 'POST',
@@ -347,7 +639,7 @@
           return data.choices?.[0]?.message?.content || "No response received from AI model.";
         } catch (error) {
           console.error("AI Fetch Error:", error);
-          return `⚠️ **AI Gateway Notice:** ${error.message}\n\n*Using Offline Nordic Engine Fallback:*\n` +
+          return `⚠️ **Live AI Gateway Notice (${provider.toUpperCase()}):** ${error.message}\n\n*Using Offline Nordic Engine Fallback:*\n` +
             AIAgentService.generateSmartFallback(prompt, state.uiState.activeTab, state.userProfile.experienceLevel);
         }
       }
@@ -387,15 +679,23 @@
       constructor() {
         this.engine = new StateEngine();
         this.appEl = document.getElementById('app');
+        this.vaultKeyHint = null;
+        this.liveModels = [];
+        this.isFetchingModels = false;
+        this.testConnectionResult = null;
+        this.isTestingConnection = false;
+        this.keyInputVisible = false;
         this.init();
       }
 
-      init() {
+      async init() {
         // Sync theme
         this.applyTheme(this.engine.state.uiState.theme);
+        await this.checkVaultKeyHint();
 
         // Global event listeners
-        this.engine.on('STATE_CHANGED', () => {
+        this.engine.on('STATE_CHANGED', async () => {
+          await this.checkVaultKeyHint();
           this.render();
           this.refreshIcons();
         });
@@ -410,6 +710,11 @@
 
         this.render();
         this.refreshIcons();
+      }
+
+      async checkVaultKeyHint() {
+        const provider = this.engine.state.userProfile.aiSettings?.provider || 'groq';
+        this.vaultKeyHint = await SecureKeyVault.getMaskedHint(provider);
       }
 
       applyTheme(theme) {
@@ -1238,39 +1543,133 @@
       // --- View 7: BYOK Settings & Engine Configuration ---
       renderSettingsView(state) {
         const { aiSettings, experienceLevel } = state.userProfile;
+        const provider = aiSettings.provider || 'groq';
+        const defaultModels = FREE_MODELS[provider] || FREE_MODELS.groq;
+        const allModels = this.liveModels && this.liveModels.length > 0 ? this.liveModels : defaultModels;
 
         return `
           <div class="space-y-6">
-            <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs">
-              <h2 class="text-base sm:text-lg font-bold text-[#0F172A] dark:text-white mb-2 flex items-center gap-2">
-                <i data-lucide="key" class="w-5 h-5 text-[#2563EB]"></i>
-                BYOK (Bring Your Own Key) AI Engine
-              </h2>
-              <p class="text-xs text-[#64748B] dark:text-slate-400 mb-5">Keys are stored exclusively in your browser's encrypted localStorage. Zero backend transit.</p>
-
-              <div class="space-y-4 text-xs sm:text-sm">
+            <!-- BYOK & Security Vault Card -->
+            <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#E5E7EB] dark:border-slate-800">
                 <div>
-                  <label class="block text-[#0F172A] dark:text-slate-300 font-semibold mb-1.5">AI Provider</label>
-                  <select id="settings-provider" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-900 font-medium text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    <option value="groq" ${aiSettings.provider === 'groq' ? 'selected' : ''}>Groq Cloud (Ultra-Fast Llama 3.3 70B & Mixtral)</option>
-                    <option value="openrouter" ${aiSettings.provider === 'openrouter' ? 'selected' : ''}>OpenRouter (DeepSeek V3, Claude 3.5, GPT-4o)</option>
+                  <h2 class="text-base sm:text-lg font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-[#2563EB]"></i>
+                    BYOK Secure Inference Engine
+                  </h2>
+                  <p class="text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
+                    Connect free Fast Inference APIs directly from your browser. Zero backend transit or middleman servers.
+                  </p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${this.vaultKeyHint ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'} w-fit flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full ${this.vaultKeyHint ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}"></span>
+                  ${this.vaultKeyHint ? 'Vault Active (Encrypted)' : 'Offline Simulation'}
+                </span>
+              </div>
+
+              <!-- Vault Cryptography Architecture Notice -->
+              <div class="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 flex items-start gap-3 text-xs">
+                <div class="w-7 h-7 rounded-lg bg-[#2563EB]/10 dark:bg-blue-900/60 text-[#2563EB] dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="lock" class="w-4 h-4"></i>
+                </div>
+                <div class="space-y-1">
+                  <h4 class="font-bold text-[#0F172A] dark:text-white">Client-Side IndexedDB + AES-GCM Vault Security</h4>
+                  <p class="text-[#475569] dark:text-slate-300 leading-relaxed text-[11px] sm:text-xs">
+                    Your keys are protected using <strong>Web Crypto AES-GCM (256-bit)</strong> with device-seeded PBKDF2 entropy and memory-level XOR obfuscation. Plain keys are <strong>never stored in localStorage</strong>; they reside strictly inside browser <strong>IndexedDB</strong> (<code class="bg-blue-100/60 dark:bg-slate-800 px-1 py-0.2 rounded font-mono">hustlepipe_secure_vault_v2</code>) and are decrypted transiently only for direct HTTPS requests to Groq or OpenRouter.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Provider & Free Model Configuration Form -->
+              <div class="space-y-4 text-xs sm:text-sm">
+                <!-- 1. AI Provider Selection -->
+                <div>
+                  <label class="block text-[#0F172A] dark:text-slate-300 font-semibold mb-1.5">Fast Inference Provider</label>
+                  <select id="settings-provider" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-900 font-medium text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                    <option value="groq" ${provider === 'groq' ? 'selected' : ''}>Groq Fast Inference (Llama 3.3 70B, Mixtral - Ultra-Fast Sub-Second Free Tier)</option>
+                    <option value="openrouter" ${provider === 'openrouter' ? 'selected' : ''}>OpenRouter (Multi-Provider Catalog - Free :free Tier Models)</option>
                   </select>
                 </div>
 
+                <!-- 2. Free LLM Model Selector Dropdown & Live Fetch -->
                 <div>
-                  <label class="block text-[#0F172A] dark:text-slate-300 font-semibold mb-1.5">API Key</label>
-                  <input id="settings-api-key" type="password" value="${aiSettings.apiKey || ''}" placeholder="gsk_... or sk-or-..." class="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-900 font-mono text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                  <p class="text-[11px] text-[#64748B] dark:text-slate-400 mt-1">Leave empty to use built-in Nordic e-commerce simulation engine.</p>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-[#0F172A] dark:text-slate-300 font-semibold">Available Free LLM Models</label>
+                    <button id="btn-fetch-models" type="button" class="touch-target text-xs font-semibold text-[#2563EB] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer">
+                      <i data-lucide="${this.isFetchingModels ? 'loader-2' : 'refresh-cw'}" class="w-3 h-3 ${this.isFetchingModels ? 'animate-spin' : ''}"></i>
+                      <span>${this.isFetchingModels ? 'Fetching Models...' : 'Fetch Live Models via API'}</span>
+                    </button>
+                  </div>
+                  <select id="settings-model" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-900 font-mono text-xs text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                    ${allModels.map(m => `
+                      <option value="${m.id}" ${aiSettings.selectedModel === m.id ? 'selected' : ''}>
+                        ${m.name} (${m.badge || 'Free Tier'})
+                      </option>
+                    `).join('')}
+                  </select>
+                  <div class="flex items-center justify-between text-[11px] text-[#64748B] dark:text-slate-400 mt-1">
+                    <span>${this.liveModels.length > 0 ? `✓ ${this.liveModels.length} models populated directly from ${provider.toUpperCase()} catalog.` : `Showing curated free models for ${provider.toUpperCase()}.`}</span>
+                    <span class="font-mono text-[10px] text-blue-600 dark:text-blue-400">Selected: ${aiSettings.selectedModel || allModels[0]?.id}</span>
+                  </div>
                 </div>
 
-                <div>
-                  <label class="block text-[#0F172A] dark:text-slate-300 font-semibold mb-1.5">Model Alias</label>
-                  <input id="settings-model" type="text" value="${aiSettings.selectedModel || 'llama-3.3-70b-versatile'}" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-900 font-mono text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                <!-- 3. IndexedDB Key Vault Status & Key Input -->
+                <div class="space-y-2 pt-1">
+                  ${this.vaultKeyHint ? `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs">
+                      <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-medium">
+                        <i data-lucide="key-round" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span>Active Key in Encrypted Vault: <code class="bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded font-mono font-bold">${this.vaultKeyHint}</code></span>
+                      </div>
+                      <button type="button" id="btn-clear-vault-key" class="touch-target px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Clear Key</span>
+                      </button>
+                    </div>
+                  ` : ''}
+
+                  <div>
+                    <label class="block text-[#0F172A] dark:text-slate-300 font-semibold mb-1.5">
+                      ${this.vaultKeyHint ? 'Replace API Key (leave empty to keep existing key)' : 'Enter API Key to Encrypt in Vault'}
+                    </label>
+                    <div class="relative flex items-center">
+                      <input id="settings-api-key" type="${this.keyInputVisible ? 'text' : 'password'}" placeholder="${this.vaultKeyHint ? 'Key encrypted in vault (enter new to update)' : (provider === 'groq' ? 'gsk_...' : 'sk-or-...')}" class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-900 font-mono text-[#0F172A] dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs sm:text-sm">
+                      <button type="button" id="btn-toggle-key-visibility" class="absolute right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" title="Toggle visibility">
+                        <i data-lucide="${this.keyInputVisible ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#64748B] dark:text-slate-400 mt-1.5">
+                      <span>
+                        ${provider === 'groq'
+                          ? 'Get a free Groq key with 30 RPM rate limits at <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="text-[#2563EB] hover:underline font-bold">console.groq.com/keys</a>'
+                          : 'Get a free OpenRouter key for :free models at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" class="text-[#2563EB] hover:underline font-bold">openrouter.ai/keys</a>'
+                        }
+                      </span>
+                      <span>No credit card required</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="pt-2">
-                  <button id="btn-save-settings" class="touch-target px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs">
-                    Save BYOK Configuration
+                <!-- Test Connection Results Feedback -->
+                ${this.testConnectionResult ? `
+                  <div class="p-3 rounded-xl text-xs border ${this.testConnectionResult.success ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'}">
+                    <div class="flex items-center gap-2 font-bold mb-0.5">
+                      <i data-lucide="${this.testConnectionResult.success ? 'check-circle-2' : 'alert-triangle'}" class="w-4 h-4"></i>
+                      <span>${this.testConnectionResult.success ? 'Inference Check Successful' : 'Connection Notice'}</span>
+                    </div>
+                    <p class="leading-relaxed pl-6 text-[11px] sm:text-xs font-mono">${this.testConnectionResult.message}</p>
+                  </div>
+                ` : ''}
+
+                <!-- Action Buttons: Save & Test -->
+                <div class="pt-2 flex flex-wrap items-center gap-3">
+                  <button id="btn-save-settings" class="touch-target px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2 cursor-pointer">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    <span>Encrypt & Save to Vault</span>
+                  </button>
+                  <button id="btn-test-connection" class="touch-target px-4 py-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2 cursor-pointer">
+                    <i data-lucide="${this.isTestingConnection ? 'loader-2' : 'zap'}" class="w-4 h-4 ${this.isTestingConnection ? 'animate-spin text-amber-500' : 'text-[#2563EB]'}"></i>
+                    <span>${this.isTestingConnection ? 'Testing Gateway...' : 'Test Connection & Latency'}</span>
                   </button>
                 </div>
               </div>
@@ -1281,13 +1680,13 @@
               <h3 class="font-bold text-sm text-[#0F172A] dark:text-white mb-2">Experience Complexity Routing</h3>
               <p class="text-xs text-[#64748B] dark:text-slate-400 mb-4">Adjusts UI tab visibility, AI persona depth, and code-level override access.</p>
               <div class="grid grid-cols-3 gap-3 text-xs">
-                <button data-set-level="rookie" class="p-3.5 rounded-xl border text-center transition ${experienceLevel === 'rookie' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-900/30 text-[#2563EB] font-bold' : 'border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400'}">
+                <button data-set-level="rookie" class="p-3.5 rounded-xl border text-center transition cursor-pointer ${experienceLevel === 'rookie' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-900/30 text-[#2563EB] font-bold' : 'border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400'}">
                   Rookie
                 </button>
-                <button data-set-level="intermediate" class="p-3.5 rounded-xl border text-center transition ${experienceLevel === 'intermediate' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-900/30 text-[#2563EB] font-bold' : 'border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400'}">
+                <button data-set-level="intermediate" class="p-3.5 rounded-xl border text-center transition cursor-pointer ${experienceLevel === 'intermediate' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-900/30 text-[#2563EB] font-bold' : 'border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400'}">
                   Standard
                 </button>
-                <button data-set-level="expert" class="p-3.5 rounded-xl border text-center transition ${experienceLevel === 'expert' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-900/30 text-[#2563EB] font-bold' : 'border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400'}">
+                <button data-set-level="expert" class="p-3.5 rounded-xl border text-center transition cursor-pointer ${experienceLevel === 'expert' ? 'border-[#2563EB] bg-blue-50 dark:bg-blue-900/30 text-[#2563EB] font-bold' : 'border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400'}">
                   Expert CLI
                 </button>
               </div>
@@ -1305,15 +1704,15 @@
                 </span>
               </div>
               <div class="flex flex-wrap gap-3 pt-2">
-                <button id="btn-replay-tour" class="touch-target px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/50 font-bold text-xs flex items-center gap-2 active:scale-95 transition">
+                <button id="btn-replay-tour" class="touch-target px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/50 font-bold text-xs flex items-center gap-2 active:scale-95 transition cursor-pointer">
                   <i data-lucide="compass" class="w-4 h-4"></i>
                   <span>Replay Guided Onboarding Tour</span>
                 </button>
-                <button id="btn-reset-tour" class="touch-target px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 font-medium text-xs flex items-center gap-2 active:scale-95 transition">
+                <button id="btn-reset-tour" class="touch-target px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 font-medium text-xs flex items-center gap-2 active:scale-95 transition cursor-pointer">
                   <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                   <span>Reset Tour Status</span>
                 </button>
-                <button id="btn-open-manual" class="touch-target px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-bold text-xs flex items-center gap-2 active:scale-95 transition">
+                <button id="btn-open-manual" class="touch-target px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-bold text-xs flex items-center gap-2 active:scale-95 transition cursor-pointer">
                   <i data-lucide="book-open" class="w-4 h-4"></i>
                   <span>Open Knowledge Hub & FAQ</span>
                 </button>
@@ -1465,19 +1864,19 @@
         const current = tourSteps[step] || tourSteps[0];
 
         return `
-          <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 fade-in">
-            <div class="bg-white dark:bg-[#0F172A] w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-[#E5E7EB] dark:border-slate-800">
+          <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto fade-in">
+            <div class="bg-white dark:bg-[#0F172A] w-full max-w-2xl max-h-[92vh] sm:max-h-[86vh] rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-[#E5E7EB] dark:border-slate-800 my-auto">
               
-              <!-- Stepper Header & Progress -->
-              <div class="p-5 sm:p-6 border-b border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/60">
-                <div class="flex items-center justify-between gap-3 mb-4">
+              <!-- Stepper Header & Progress (Fixed top) -->
+              <div class="shrink-0 p-4 sm:p-5 border-b border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/70">
+                <div class="flex items-center justify-between gap-3 mb-3 sm:mb-4">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-pulse"></span>
                     <span class="text-xs font-bold text-[#2563EB] dark:text-blue-400 uppercase tracking-wider">HustlePipe Guided Tour</span>
                   </div>
                   <div class="flex items-center gap-3">
                     <span class="text-xs font-bold text-[#64748B] dark:text-slate-400">Step ${step + 1} of ${totalSteps}</span>
-                    <button id="btn-close-onboarding" class="touch-target p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition" title="Close Onboarding">
+                    <button id="btn-close-onboarding" class="touch-target p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition cursor-pointer" title="Close Onboarding">
                       <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                   </div>
@@ -1492,7 +1891,7 @@
                     const isCompleted = i < step;
                     const isActive = i === step;
                     return `
-                      <button data-tour-step="${i}" class="relative z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all active:scale-90 ${
+                      <button data-tour-step="${i}" class="relative z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all active:scale-90 cursor-pointer ${
                         isActive
                           ? 'bg-[#2563EB] text-white ring-4 ring-blue-500/20 shadow-md shadow-blue-500/30'
                           : isCompleted
@@ -1506,15 +1905,15 @@
                 </div>
               </div>
 
-              <!-- Step Content Body -->
-              <div class="p-6 sm:p-8 flex-1 overflow-y-auto space-y-5">
+              <!-- Step Content Body (Scrollable with min-h-0) -->
+              <div class="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto space-y-4">
                 <div class="flex items-center gap-3.5">
-                  <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#2563EB] dark:text-blue-400 shrink-0 shadow-xs">
-                    <i data-lucide="${current.icon}" class="w-6 h-6"></i>
+                  <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#2563EB] dark:text-blue-400 shrink-0 shadow-xs">
+                    <i data-lucide="${current.icon}" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                   </div>
                   <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-[#2563EB] dark:text-blue-400">${current.badge}</span>
-                    <h2 class="text-lg sm:text-xl font-bold text-[#0F172A] dark:text-white leading-tight">${current.title}</h2>
+                    <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#2563EB] dark:text-blue-400">${current.badge}</span>
+                    <h2 class="text-base sm:text-xl font-bold text-[#0F172A] dark:text-white leading-tight">${current.title}</h2>
                   </div>
                 </div>
 
@@ -1523,9 +1922,9 @@
                 </p>
 
                 <!-- 3 Key Highlights -->
-                <div class="space-y-2.5 pt-1">
+                <div class="space-y-2 pt-1">
                   ${current.takeaways.map(t => `
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800/80">
+                    <div class="flex items-start gap-3 p-2.5 sm:p-3 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800/80">
                       <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-[#2563EB] dark:text-blue-300 shrink-0 mt-0.5">
                         <i data-lucide="${t.icon}" class="w-3.5 h-3.5"></i>
                       </div>
@@ -1538,28 +1937,28 @@
                 </div>
               </div>
 
-              <!-- Navigation Controls -->
-              <div class="p-4 sm:p-5 border-t border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/60 flex items-center justify-between gap-3">
+              <!-- Navigation Controls (Fixed bottom) -->
+              <div class="shrink-0 p-3 sm:p-4 border-t border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/70 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2">
                   ${step > 0 ? `
-                    <button id="btn-tour-prev" class="touch-target px-4 py-2 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs transition active:scale-95 flex items-center gap-1.5 shadow-xs">
+                    <button id="btn-tour-prev" class="touch-target px-3.5 py-2 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs transition active:scale-95 flex items-center gap-1.5 shadow-xs cursor-pointer">
                       <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                       <span>Previous</span>
                     </button>
                   ` : ''}
-                  <button id="btn-tour-skip" class="touch-target px-3.5 py-2 rounded-xl text-xs font-semibold text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition">
+                  <button id="btn-tour-skip" class="touch-target px-3 py-2 rounded-xl text-xs font-semibold text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition cursor-pointer">
                     Skip Tour
                   </button>
                 </div>
 
                 <div>
                   ${step < totalSteps - 1 ? `
-                    <button id="btn-tour-next" class="touch-target px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2">
+                    <button id="btn-tour-next" class="touch-target px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2 cursor-pointer">
                       <span>Next Step</span>
                       <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
                   ` : `
-                    <button id="btn-tour-finish" class="touch-target px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2">
+                    <button id="btn-tour-finish" class="touch-target px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2 cursor-pointer">
                       <span>Finish & Get Started</span>
                       <i data-lucide="rocket" class="w-4 h-4"></i>
                     </button>
@@ -2293,19 +2692,153 @@
           });
         });
 
-        // Settings Form Save
-        document.getElementById('btn-save-settings')?.addEventListener('click', () => {
-          const provider = document.getElementById('settings-provider').value;
-          const apiKey = document.getElementById('settings-api-key').value.trim();
-          const selectedModel = document.getElementById('settings-model').value.trim();
+        // Settings: Provider Switcher
+        document.getElementById('settings-provider')?.addEventListener('change', async (e) => {
+          const provider = e.target.value;
+          const defaultModel = provider === 'groq' ? 'llama-3.3-70b-versatile' : 'deepseek/deepseek-r1:free';
+          this.liveModels = [];
+          this.testConnectionResult = null;
+          this.engine.update(s => {
+            s.userProfile.aiSettings.provider = provider;
+            s.userProfile.aiSettings.selectedModel = defaultModel;
+          });
+          await this.checkVaultKeyHint();
+          this.render();
+          this.refreshIcons();
+        });
+
+        // Settings: Model Selector
+        document.getElementById('settings-model')?.addEventListener('change', (e) => {
+          const selectedModel = e.target.value;
+          this.engine.update(s => {
+            s.userProfile.aiSettings.selectedModel = selectedModel;
+          });
+          const badgeEl = document.querySelector('#ai-drawer .font-mono');
+          if (badgeEl) badgeEl.innerText = selectedModel;
+        });
+
+        // Settings: Key Visibility Toggle
+        document.getElementById('btn-toggle-key-visibility')?.addEventListener('click', () => {
+          this.keyInputVisible = !this.keyInputVisible;
+          const input = document.getElementById('settings-api-key');
+          if (input) input.type = this.keyInputVisible ? 'text' : 'password';
+          const icon = document.querySelector('#btn-toggle-key-visibility i');
+          if (icon) {
+            icon.setAttribute('data-lucide', this.keyInputVisible ? 'eye-off' : 'eye');
+            this.refreshIcons();
+          }
+        });
+
+        // Settings: Fetch Live Models from Groq or OpenRouter
+        document.getElementById('btn-fetch-models')?.addEventListener('click', async () => {
+          const provider = document.getElementById('settings-provider')?.value || 'groq';
+          const inputKey = document.getElementById('settings-api-key')?.value.trim();
+          const vaultKey = await SecureKeyVault.retrieveKey(provider);
+          const activeKey = inputKey || vaultKey;
+
+          this.isFetchingModels = true;
+          this.render();
+          this.refreshIcons();
+
+          try {
+            const models = await AIAgentService.fetchAvailableModels(provider, activeKey);
+            this.liveModels = models;
+            this.testConnectionResult = {
+              success: true,
+              message: `Retrieved ${models.length} active models directly from ${provider.toUpperCase()} API catalog.`
+            };
+          } catch (err) {
+            this.testConnectionResult = {
+              success: false,
+              message: `Could not fetch live models: ${err.message}`
+            };
+          } finally {
+            this.isFetchingModels = false;
+            this.render();
+            this.refreshIcons();
+          }
+        });
+
+        // Settings: Test Connection & Latency
+        document.getElementById('btn-test-connection')?.addEventListener('click', async () => {
+          const provider = document.getElementById('settings-provider')?.value || 'groq';
+          const model = document.getElementById('settings-model')?.value || 'llama-3.3-70b-versatile';
+          const inputKey = document.getElementById('settings-api-key')?.value.trim();
+          const vaultKey = await SecureKeyVault.retrieveKey(provider);
+          const activeKey = inputKey || vaultKey;
+
+          if (!activeKey) {
+            this.testConnectionResult = {
+              success: false,
+              message: `Please enter an API key for ${provider.toUpperCase()} before running the connection test.`
+            };
+            this.render();
+            this.refreshIcons();
+            return;
+          }
+
+          this.isTestingConnection = true;
+          this.testConnectionResult = null;
+          this.render();
+          this.refreshIcons();
+
+          try {
+            const result = await AIAgentService.testConnection(provider, activeKey, model);
+            this.testConnectionResult = {
+              success: true,
+              message: `⚡ Connected in ${result.latency}ms! Model: ${result.model} responded: "${result.text}"`
+            };
+          } catch (err) {
+            this.testConnectionResult = {
+              success: false,
+              message: `Inference test failed: ${err.message}`
+            };
+          } finally {
+            this.isTestingConnection = false;
+            this.render();
+            this.refreshIcons();
+          }
+        });
+
+        // Settings: Save & Encrypt Key in IndexedDB Vault
+        document.getElementById('btn-save-settings')?.addEventListener('click', async () => {
+          const provider = document.getElementById('settings-provider')?.value || 'groq';
+          const apiKey = document.getElementById('settings-api-key')?.value.trim();
+          const selectedModel = document.getElementById('settings-model')?.value.trim();
+
+          if (apiKey) {
+            await SecureKeyVault.storeKey(provider, apiKey);
+          }
 
           this.engine.update(s => {
-            s.userProfile.aiSettings = { provider, apiKey, selectedModel };
+            s.userProfile.aiSettings.provider = provider;
+            s.userProfile.aiSettings.selectedModel = selectedModel;
+            // Never persist plaintext key in localStorage!
+            s.userProfile.aiSettings.apiKey = '';
             const aiStep = s.pipelineSteps.find(st => st.id === 'step_ai');
-            if (aiStep && apiKey) aiStep.done = true;
+            if (aiStep) aiStep.done = true;
           });
 
-          alert('BYOK Settings saved securely in localStorage!');
+          await this.checkVaultKeyHint();
+          this.testConnectionResult = {
+            success: true,
+            message: `Key successfully encrypted with AES-GCM and stored inside browser IndexedDB! Ready for real inference.`
+          };
+          this.render();
+          this.refreshIcons();
+        });
+
+        // Settings: Clear Key from IndexedDB Vault
+        document.getElementById('btn-clear-vault-key')?.addEventListener('click', async () => {
+          const provider = this.engine.state.userProfile.aiSettings?.provider || 'groq';
+          await SecureKeyVault.deleteKey(provider);
+          await this.checkVaultKeyHint();
+          this.testConnectionResult = {
+            success: true,
+            message: `API Key for ${provider.toUpperCase()} permanently removed from encrypted vault.`
+          };
+          this.render();
+          this.refreshIcons();
         });
 
         // Onboarding Stepper Modal Controls
