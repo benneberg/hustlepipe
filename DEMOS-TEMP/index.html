@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>vibedrop • make money</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="theme-color" content="#7c3aed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: 262 83 67;
+        }
+        
+        .tail-container {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .logo-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .neon-text {
+            text-shadow: 0 0 15px rgb(167 139 250);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .shimmer {
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.05) 25%, 
+                rgba(255,255,255,0.25) 50%, 
+                rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        .float-card {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        .bottom-nav {
+            box-shadow: 0 -4px 20px -5px rgb(0 0 0 / 0.3);
+        }
+
+        .product-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .product-card:active {
+            transform: scale(0.95);
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            position: relative;
+        }
+        
+        .chat-ai {
+            background: rgba(167, 139, 250, 0.15);
+            border-bottom-left-radius: 4px;
+        }
+        
+        .chat-user {
+            background: linear-gradient(90deg, #a855f7, #ec4899);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .nav-item {
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .nav-item.active {
+            color: rgb(167 139 250);
+            transform: scale(1.1);
+        }
+
+        .modal {
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes modalPop {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(60px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .trend-bar {
+            height: 3px;
+            background: linear-gradient(to right, #22d3ee, #a855f7);
+            animation: trendGrow 1.5s ease forwards;
+        }
+
+        .skeleton {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="tail-container bg-zinc-950 text-zinc-200 h-screen overflow-hidden flex flex-col max-w-md mx-auto border-x border-zinc-800 shadow-2xl" style="height: 100vh; max-height: 812px;">
+    <!-- STATUS BAR -->
+    <div class="h-11 bg-zinc-950 flex items-end justify-between px-6 text-xs z-50">
+        <div class="font-medium text-white">9:41</div>
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-signal"></i>
+            <i class="fa-solid fa-wifi"></i>
+            <div class="flex items-center gap-1">
+                <span>87</span>
+                <i class="fa-solid fa-battery-three-quarters"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="bg-zinc-900 border-b border-zinc-800 px-5 py-3 flex items-center justify-between z-40">
+        <div class="flex items-center gap-x-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-violet-500 to-fuchsia-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold logo-font shadow-inner">V</div>
+            <div>
+                <span class="logo-font text-3xl font-semibold tracking-tighter text-white neon-text">vibedrop</span>
+            </div>
+        </div>
+        
+        <div onclick="showProfileModal()" class="flex items-center gap-x-2 bg-zinc-800 hover:bg-zinc-700 transition-colors px-3 py-1 rounded-3xl cursor-pointer">
+            <div class="text-right">
+                <div class="text-xs text-emerald-400 font-medium">LVL 12</div>
+                <div class="text-[10px] text-zinc-400 -mt-0.5">1,840 XP</div>
+            </div>
+            <div class="w-8 h-8 bg-orange-300 rounded-2xl overflow-hidden border-2 border-orange-400">
+                <img src="https://picsum.photos/id/64/128/128" alt="you" class="w-full h-full object-cover">
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="flex-1 overflow-y-auto pb-20 bg-zinc-950 relative">
+        
+        <!-- HOME PAGE -->
+        <div id="page-home" class="page p-5">
+            <div class="mb-6">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <div class="text-zinc-400 text-sm">Good morning, Kai 👋</div>
+                        <div class="text-4xl font-semibold text-white tracking-tighter">Ready to ship?</div>
+                    </div>
+                    <div onclick="claimDailyStreak()" 
+                         class="bg-zinc-900 border border-amber-400 text-amber-400 text-xs font-medium px-4 py-2 rounded-3xl flex flex-col items-center leading-none cursor-pointer active:scale-95 transition-all">
+                        <span class="text-lg">🔥</span>
+                        <span class="text-[10px]">7 day</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FINANCIAL CARDS -->
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <!-- Earnings -->
+                <div onclick="showEarningsModal()" 
+                     class="glass border border-white/10 rounded-3xl p-5 float-card cursor-pointer">
+                    <div class="flex justify-between">
+                        <div>
+                            <div class="text-xs text-emerald-400 tracking-widest">THIS MONTH</div>
+                            <div class="text-4xl font-semibold text-white mt-1">$1,284</div>
+                            <div class="flex items-center gap-1 text-emerald-400 text-xs mt-4">
+                                <i class="fa-solid fa-arrow-trend-up"></i>
+                                <span>+42%</span>
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-4xl">💵</div>
+                    </div>
+                </div>
+                
+                <!-- Potential -->
+                <div class="glass border border-white/10 rounded-3xl p-5 float-card cursor-pointer" style="animation-delay: 400ms">
+                    <div class="flex justify-between">
+                        <div>
+                            <div class="text-xs text-sky-400 tracking-widest">POTENTIAL</div>
+                            <div class="text-4xl font-semibold text-white mt-1">$4,920</div>
+                            <div class="text-[10px] text-zinc-400">from 18 products</div>
+                            <div onclick="event.stopImmediatePropagation(); launchStore()" 
+                                 class="mt-6 text-xs bg-white text-zinc-900 font-semibold px-5 py-2.5 rounded-2xl inline-flex items-center gap-x-2 active:scale-95">
+                                <i class="fa-solid fa-rocket"></i>
+                                <span>LAUNCH</span>
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-4xl">📈</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROGRESS TO FIRST $500 -->
+            <div class="glass border border-white/10 rounded-3xl p-6 mb-8">
+                <div class="flex justify-between text-xs mb-3">
+                    <div class="font-medium text-violet-300">FIRST $500 CHALLENGE</div>
+                    <div class="font-mono">$312 / $500</div>
+                </div>
+                <div class="h-2 bg-zinc-800 rounded-3xl overflow-hidden">
+                    <div class="h-2 w-3/5 bg-gradient-to-r from-violet-400 to-fuchsia-400 rounded-3xl shimmer"></div>
+                </div>
+                <div class="text-[10px] text-zinc-400 mt-4 flex items-center justify-between">
+                    <div>4 more sales • 11 days streak</div>
+                    <div onclick="completeMilestone()" class="text-violet-400 cursor-pointer">+50XP</div>
+                </div>
+            </div>
+
+            <!-- TRENDING PRODUCTS -->
+            <div class="mb-3 flex items-center justify-between px-1">
+                <div class="uppercase text-xs font-semibold tracking-widest text-pink-300">🔥 Trending for teens</div>
+                <div onclick="switchTab(1)" class="text-xs flex items-center gap-x-1 text-violet-400 cursor-pointer">
+                    <span>explore all</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </div>
+            </div>
+            
+            <div id="trending-carousel" class="flex gap-4 overflow-x-auto pb-4 snap-x">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- DISCOVER PAGE -->
+        <div id="page-discover" class="page hidden p-5">
+            <div class="sticky top-0 bg-zinc-950 pb-4 z-10">
+                <div class="relative">
+                    <input id="search-input" 
+                           onkeyup="if(event.key === 'Enter') simulateScrape()"
+                           type="text" 
+                           placeholder="Search trends... (try 'led lights')" 
+                           class="w-full bg-zinc-900 border border-zinc-700 focus:border-violet-400 rounded-3xl px-5 py-4 text-sm outline-none">
+                    <button onclick="simulateScrape()" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 bg-violet-600 text-white px-6 py-2 rounded-3xl text-sm font-medium active:scale-95">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+                
+                <div class="flex gap-2 mt-4 text-xs">
+                    <div onclick="quickFilter(this)" class="filter-chip active px-5 py-2 bg-white/5 rounded-3xl whitespace-nowrap">TikTok viral</div>
+                    <div onclick="quickFilter(this)" class="filter-chip px-5 py-2 bg-white/5 rounded-3xl whitespace-nowrap">High margin</div>
+                    <div onclick="quickFilter(this)" class="filter-chip px-5 py-2 bg-white/5 rounded-3xl whitespace-nowrap">Under $8</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between text-xs uppercase mb-4">
+                <div class="font-semibold text-teal-300">AI Product Scanner</div>
+                <button onclick="simulateScrape()" 
+                        class="flex items-center gap-x-2 text-teal-400 hover:text-teal-300">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span class="font-medium">SCAN NOW</span>
+                </button>
+            </div>
+            
+            <div id="product-list" class="space-y-4">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- STUDIO / BUILD PAGE -->
+        <div id="page-studio" class="page hidden p-5">
+            <h2 class="text-2xl font-semibold mb-6">Your Store Studio</h2>
+            
+            <div class="glass rounded-3xl p-5 mb-6">
+                <div class="text-xs text-zinc-400 mb-2">CURRENT THEME</div>
+                <div class="flex gap-4 items-center">
+                    <div class="w-20 h-20 bg-gradient-to-br from-pink-400 to-purple-600 rounded-2xl flex items-center justify-center text-white text-4xl shadow-inner">🛍️</div>
+                    <div>
+                        <div class="font-semibold">Aesthetic Glow</div>
+                        <div class="text-xs text-zinc-400">Pastel • Clean • GenZ</div>
+                        <div class="mt-3 text-[10px] inline-block bg-emerald-400 text-emerald-950 px-3 py-1 rounded-2xl">LIVE</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <div class="flex justify-between text-xs font-medium mb-4 px-2">
+                    <div class="text-violet-300">ADD PRODUCTS</div>
+                    <div onclick="showImportModal()" class="cursor-pointer flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>IMPORT FROM ALI</span>
+                    </div>
+                </div>
+                
+                <div id="store-products" class="grid grid-cols-3 gap-3">
+                    <!-- JS populated mini product tiles -->
+                </div>
+            </div>
+            
+            <button onclick="launchStore()" 
+                    class="w-full py-6 text-lg font-semibold bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-3xl active:scale-[0.97] transition-all shadow-xl shadow-violet-500/30 flex items-center justify-center gap-x-3">
+                <i class="fa-solid fa-store"></i>
+                <span>PREVIEW &amp; LAUNCH STORE</span>
+            </button>
+        </div>
+
+        <!-- GROW / MARKETING PAGE -->
+        <div id="page-grow" class="page hidden p-5">
+            <h2 class="text-2xl font-semibold mb-2">Grow Fast</h2>
+            <p class="text-zinc-400 text-sm">Marketing tools for teens who actually get it</p>
+            
+            <div class="mt-8 space-y-6">
+                <!-- Viral Generator -->
+                <div onclick="generateViralContent()" class="glass rounded-3xl p-6 cursor-pointer active:scale-[0.985]">
+                    <div class="flex gap-4">
+                        <div class="text-5xl">📱</div>
+                        <div class="flex-1">
+                            <div class="uppercase text-pink-400 text-xs font-bold tracking-widest">TikTok Script Generator</div>
+                            <div class="font-semibold text-lg leading-none mt-2">Create a 15-second hook that converts</div>
+                            <div class="text-xs text-zinc-400 mt-6">Last used: 2h ago • 14 scripts generated</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ad mock -->
+                <div class="glass rounded-3xl overflow-hidden">
+                    <div class="h-2 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500"></div>
+                    <div class="p-5">
+                        <div class="text-xs uppercase mb-2 text-amber-300">Instagram Reel Ad</div>
+                        <div class="bg-zinc-900 rounded-2xl p-4 text-center text-xs leading-tight">
+                            "POV: you just made $87 in your sleep with a $6 product 💀<br><span class='text-teal-400'>Link in bio. First 50 get free shipping</span>"
+                        </div>
+                        <button onclick="copyToClipboard(this)" 
+                                class="mt-5 w-full text-xs py-3 border border-dashed border-white/30 rounded-2xl text-white/70 hover:text-white transition-colors">
+                            COPY CAPTION + EMOJI
+                        </button>
+                    </div>
+                </div>
+                
+                <div onclick="showProfitCalculator()" class="text-center text-xs py-4 border border-white/10 rounded-3xl text-violet-300 cursor-pointer">
+                    <i class="fa-solid fa-calculator mr-2"></i>
+                    OPEN PROFIT CALCULATOR
+                </div>
+            </div>
+        </div>
+
+        <!-- ACADEMY PAGE -->
+        <div id="page-academy" class="page hidden p-5">
+            <h2 class="text-3xl font-semibold logo-font tracking-tighter mb-1">Drop Academy</h2>
+            <div class="text-teal-400 text-sm mb-8">14-day roadmap to your first $1k</div>
+            
+            <div class="space-y-6">
+                <div class="flex gap-4">
+                    <div class="w-6 h-6 rounded-2xl bg-violet-500 flex items-center justify-center text-xs font-bold shrink-0">1</div>
+                    <div class="flex-1">
+                        <div class="font-medium">Find a winning product</div>
+                        <div class="text-xs text-zinc-400">Use the scanner. Look for 3x+ margin and emotional buying.</div>
+                        <div onclick="markLessonComplete(this)" class="text-[10px] inline-flex mt-3 items-center gap-x-2 text-emerald-400 cursor-pointer">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span class="underline">MARK COMPLETE (+80XP)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="h-px bg-white/10"></div>
+                
+                <div class="flex gap-4">
+                    <div class="w-6 h-6 rounded-2xl bg-fuchsia-500 flex items-center justify-center text-xs font-bold shrink-0">2</div>
+                    <div class="flex-1">
+                        <div class="font-medium">Build your store in 20 mins</div>
+                        <div class="text-xs text-zinc-400">Use our templates. No coding needed.</div>
+                    </div>
+                </div>
+                
+                <div class="h-px bg-white/10"></div>
+                
+                <div class="flex gap-4 opacity-40">
+                    <div class="w-6 h-6 rounded-2xl bg-amber-500 flex items-center justify-center text-xs font-bold shrink-0">3</div>
+                    <div class="flex-1">
+                        <div class="font-medium">Go viral on TikTok &amp; IG</div>
+                        <div class="text-xs text-zinc-400">Use our script templates and hooks that actually work in 2026.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12">
+                <div class="text-xs font-medium text-zinc-400 mb-4">QUICK GUIDES</div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div onclick="watchTutorial(0)" class="glass rounded-3xl p-4 cursor-pointer">
+                        <div class="aspect-video bg-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-3">📹</div>
+                        <div class="font-medium text-sm">How to spy on winning products</div>
+                    </div>
+                    <div onclick="watchTutorial(1)" class="glass rounded-3xl p-4 cursor-pointer">
+                        <div class="aspect-video bg-zinc-800 rounded-2xl flex items-center justify-center text-3xl mb-3">📹</div>
+                        <div class="font-medium text-sm">First TikTok that made me $400</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI CHAT PAGE (opened via floating button) -->
+        <div id="page-ai-chat" class="page hidden flex flex-col h-full bg-zinc-950">
+            <!-- Chat header -->
+            <div class="bg-zinc-900 px-5 py-4 flex items-center gap-x-3 border-b border-zinc-700">
+                <button onclick="closeChat()" class="text-zinc-400">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div id="current-expert-avatar" class="w-9 h-9 bg-violet-400 rounded-2xl flex items-center justify-center text-xl">🧠</div>
+                <div>
+                    <div id="current-expert-name" class="font-semibold">Marketing Mia</div>
+                    <div id="current-expert-title" class="text-xs text-teal-400">TikTok &amp; UGC Expert</div>
+                </div>
+            </div>
+            
+            <!-- Messages -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 space-y-6 bg-[radial-gradient(#27272a_1px,transparent_1px)] bg-[length:30px_30px]">
+                <!-- JS injected messages -->
+            </div>
+            
+            <!-- Input -->
+            <div class="p-4 bg-zinc-900 border-t border-zinc-700">
+                <div class="flex gap-x-3">
+                    <input id="chat-input" 
+                           onkeypress="if(event.key === 'Enter') sendChatMessage()"
+                           type="text" 
+                           class="flex-1 bg-zinc-800 border border-zinc-700 focus:border-fuchsia-400 rounded-3xl px-6 py-4 outline-none text-sm"
+                           placeholder="Ask anything...">
+                    <button onclick="sendChatMessage()" 
+                            class="w-12 h-12 bg-gradient-to-br from-fuchsia-500 to-violet-500 rounded-3xl flex items-center justify-center text-white active:scale-95">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="flex gap-4 text-[10px] justify-center mt-4 text-zinc-500">
+                    <div onclick="switchExpert(0)" class="cursor-pointer hover:text-violet-300">Mia</div>
+                    <div onclick="switchExpert(1)" class="cursor-pointer hover:text-violet-300">Jax</div>
+                    <div onclick="switchExpert(2)" class="cursor-pointer hover:text-violet-300">Sam</div>
+                    <div onclick="switchExpert(3)" class="cursor-pointer hover:text-violet-300">Kai</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav fixed bottom-0 left-1/2 -translate-x-1/2 max-w-md w-full bg-zinc-900 border-t border-zinc-700 z-50">
+        <div class="flex text-zinc-400 text-[10px]">
+            <div onclick="switchTab(0)" class="nav-item active flex-1 flex flex-col items-center py-3 cursor-pointer">
+                <i class="fa-solid fa-house text-xl"></i>
+                <span class="mt-1">Home</span>
+            </div>
+            <div onclick="switchTab(1)" class="nav-item flex-1 flex flex-col items-center py-3 cursor-pointer">
+                <i class="fa-solid fa-binoculars text-xl"></i>
+                <span class="mt-1">Discover</span>
+            </div>
+            <div onclick="switchTab(2)" class="nav-item flex-1 flex flex-col items-center py-3 cursor-pointer">
+                <i class="fa-solid fa-cube text-xl"></i>
+                <span class="mt-1">Build</span>
+            </div>
+            <div onclick="switchTab(3)" class="nav-item flex-1 flex flex-col items-center py-3 cursor-pointer">
+                <i class="fa-solid fa-chart-line text-xl"></i>
+                <span class="mt-1">Grow</span>
+            </div>
+            <div onclick="switchTab(4)" class="nav-item flex-1 flex flex-col items-center py-3 cursor-pointer">
+                <i class="fa-solid fa-graduation-cap text-xl"></i>
+                <span class="mt-1">Learn</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING AI BUTTON -->
+    <div onclick="openAIExpertPicker()" 
+         class="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-fuchsia-500/40 z-50 active:scale-95 transition-all">
+        <i class="fa-solid fa-comments text-3xl text-white"></i>
+    </div>
+
+    <!-- AI EXPERT PICKER BOTTOM SHEET -->
+    <div onclick="if(event.target.id === 'expert-picker-backdrop') closeExpertPicker()" 
+         id="expert-picker-backdrop"
+         class="hidden fixed inset-0 bg-black/60 z-[999] flex items-end">
+        <div onclick="event.stopImmediatePropagation()" 
+             class="bg-zinc-900 w-full rounded-t-3xl max-w-md mx-auto overflow-hidden">
+            <div class="h-1.5 w-12 bg-zinc-700 rounded-full mx-auto my-4"></div>
+            
+            <div class="px-6 pb-8">
+                <div class="text-center text-lg font-semibold mb-6">Choose your expert coach</div>
+                
+                <div class="grid grid-cols-2 gap-4" id="expert-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" onclick="this.classList.add('hidden')" 
+         class="hidden fixed bottom-28 left-1/2 -translate-x-1/2 bg-zinc-800 border border-violet-300 text-violet-200 text-sm px-5 py-3 rounded-3xl shadow-2xl flex items-center gap-x-3 z-[999]">
+        <span id="toast-text"></span>
+    </div>
+
+    <!-- MODALS CONTAINER -->
+    <div id="modal-container" class="hidden fixed inset-0 bg-black/70 z-[9999] flex items-end">
+        <!-- Dynamic modals injected here via JS -->
+    </div>
+
+    <script>
+        // Tailwind script run
+        function initializeTailwind() {
+            // Already configured via CDN
+        }
+        
+        let currentPage = 0
+        const pages = ['home', 'discover', 'studio', 'grow', 'academy']
+        
+        let currentExpert = 0
+        const experts = [
+            {
+                id: 0,
+                name: "Marketing Mia",
+                title: "TikTok Queen",
+                emoji: "👑",
+                color: "pink",
+                intro: "Hey bestie! Let's make content that actually converts 🔥 What campaign are we running?"
+            },
+            {
+                id: 1,
+                name: "Product Jax",
+                title: "Trend Scout",
+                emoji: "🔎",
+                color: "cyan",
+                intro: "I scan 10,000 products a day. What's your niche? Gaming? Beauty? Streetwear?"
+            },
+            {
+                id: 2,
+                name: "Store Sam",
+                title: "Builder",
+                emoji: "🛠️",
+                color: "violet",
+                intro: "I can get your store live in under 25 minutes. What theme are you feeling?"
+            },
+            {
+                id: 3,
+                name: "Profit Kai",
+                title: "Money Mentor",
+                emoji: "💰",
+                color: "emerald",
+                intro: "Numbers guy. I help teens turn $200 into $2k months. What's your current profit?"
+            }
+        ]
+        
+        let chatHistory = {
+            0: [
+                {type: "ai", text: "Hey bestie! Let's make content that actually converts 🔥 What campaign are we running?"}
+            ],
+            1: [
+                {type: "ai", text: "I scan 10,000 products a day. What's your niche? Gaming? Beauty? Streetwear?"}
+            ],
+            2: [
+                {type: "ai", text: "I can get your store live in under 25 minutes. What theme are you feeling?"}
+            ],
+            3: [
+                {type: "ai", text: "Numbers guy. I help teens turn $200 into $2k months. What's your current profit?"}
+            ]
+        }
+        
+        const productsDB = [
+            {
+                id: 1,
+                name: "RGB LED Strip Lights",
+                price: 18.99,
+                cost: 4.25,
+                margin: 78,
+                trend: "4.9m",
+                image: "https://picsum.photos/id/201/280/280",
+                badge: "VIRAL"
+            },
+            {
+                id: 2,
+                name: "Mini Portable Blender",
+                price: 24.99,
+                cost: 6.8,
+                margin: 73,
+                trend: "1.2m",
+                image: "https://picsum.photos/id/29/280/280",
+                badge: "NEW"
+            },
+            {
+                id: 3,
+                name: "Aesthetic Mushroom Lamp",
+                price: 15.5,
+                cost: 3.9,
+                margin: 75,
+                trend: "892k",
+                image: "https://picsum.photos/id/160/280/280",
+                badge: "AESTHETIC"
+            }
+        ]
+        
+        function switchTab(tabIndex) {
+            currentPage = tabIndex
+            
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                if (i === tabIndex) {
+                    el.classList.add('active', 'text-violet-300')
+                } else {
+                    el.classList.remove('active', 'text-violet-300')
+                }
+            })
+            
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden')
+            })
+            
+            const targetPage = document.getElementById(`page-${pages[tabIndex]}`)
+            if (targetPage) targetPage.classList.remove('hidden')
+            
+            // Refresh some dynamic content
+            if (tabIndex === 1) renderProductList()
+        }
+        
+        function renderTrending() {
+            const container = document.getElementById('trending-carousel')
+            container.innerHTML = ''
+            
+            productsDB.forEach(product => {
+                const div = document.createElement('div')
+                div.className = `min-w-[170px] bg-zinc-900 rounded-3xl overflow-hidden product-card snap-center`
+                div.innerHTML = `
+                    <img src="${product.image}" class="w-full h-36 object-cover">
+                    <div class="p-3">
+                        <div class="flex justify-between items-start">
+                            <div class="font-medium text-sm leading-tight">${product.name}</div>
+                            <div class="text-emerald-400 text-xs font-mono">+${product.margin}%</div>
+                        </div>
+                        <div class="flex justify-between items-baseline mt-4">
+                            <div>
+                                <span class="text-xs text-zinc-400">Sell for</span>
+                                <span class="font-semibold text-lg">$${product.price}</span>
+                            </div>
+                            <button onclick="importProduct(${product.id}); event.stopImmediatePropagation()" 
+                                    class="text-[10px] bg-white text-black px-4 py-2 rounded-2xl font-medium">IMPORT</button>
+                        </div>
+                    </div>
+                `
+                container.appendChild(div)
+            })
+        }
+        
+        function renderProductList(filteredProducts = null) {
+            const container = document.getElementById('product-list')
+            container.innerHTML = ''
+            
+            const toRender = filteredProducts || productsDB
+            
+            toRender.forEach(product => {
+                const cardHTML = `
+                <div onclick="showProductDetail(${product.id})" class="product-card glass border border-white/10 rounded-3xl overflow-hidden">
+                    <div class="flex">
+                        <img src="${product.image}" class="w-28 h-28 object-cover">
+                        <div class="flex-1 p-4">
+                            <div class="flex items-center justify-between">
+                                <span class="px-3 py-1 text-[10px] bg-teal-400 text-teal-950 rounded-3xl">${product.badge}</span>
+                                <span class="font-mono text-xs text-emerald-400">${product.trend} views</span>
+                            </div>
+                            <div class="mt-3 font-semibold text-base leading-tight">${product.name}</div>
+                            <div class="flex items-baseline gap-x-3 mt-auto pt-6">
+                                <div class="text-xs">
+                                    <span class="text-zinc-400">COGS</span><br>
+                                    <span class="font-medium">$${product.cost}</span>
+                                </div>
+                                <div class="h-7 border-l border-white/30"></div>
+                                <div>
+                                    <span class="text-emerald-400 font-semibold text-xl">$${product.price}</span>
+                                    <span class="text-xs text-emerald-400">(${product.margin}%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`
+                container.innerHTML += cardHTML
+            })
+        }
+        
+        function simulateScrape() {
+            const searchTerm = document.getElementById('search-input').value || "led lights"
+            
+            showToast(`Scanning TikTok, IG &amp; AliExpress for <span class="font-medium">${searchTerm}</span>...`, 2200)
+            
+            setTimeout(() => {
+                const extraProduct = {
+                    id: Date.now(),
+                    name: "Wireless RGB Mouse",
+                    price: 22.99,
+                    cost: 5.75,
+                    margin: 75,
+                    trend: "2.1m",
+                    image: "https://picsum.photos/id/201/280/280",
+                    badge: "HOT"
+                }
+                productsDB.unshift(extraProduct)
+                renderProductList()
+                showToast("Found 47 new products 🔥", 1800)
+            }, 1850)
+        }
+        
+        function showProductDetail(id) {
+            const product = productsDB.find(p => p.id === id)
+            if (!product) return
+            
+            const modalHTML = `
+            <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 w-full max-w-md mx-auto rounded-t-3xl max-h-[85vh] overflow-hidden">
+                <div class="relative">
+                    <img src="${product.image}" class="w-full h-64 object-cover">
+                    <div onclick="closeModal()" class="absolute top-6 left-6 w-8 h-8 bg-black/60 hover:bg-black/80 transition-colors rounded-2xl flex items-center justify-center text-white cursor-pointer">
+                        ✕
+                    </div>
+                    <div class="absolute top-6 right-6 bg-black/70 text-white text-xs font-medium px-4 py-2 rounded-3xl">${product.badge}</div>
+                </div>
+                
+                <div class="p-6">
+                    <div class="flex justify-between items-start">
+                        <div class="text-2xl font-semibold">${product.name}</div>
+                        <div class="text-right">
+                            <div class="text-emerald-400 text-3xl font-semibold">$${product.price}</div>
+                            <div class="text-xs text-zinc-400">Retail price</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-x-8 mt-8">
+                        <div>
+                            <div class="text-xs text-zinc-400">YOUR COST</div>
+                            <div class="text-4xl font-semibold text-white">$${product.cost}</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-xs text-zinc-400 mb-3">PROFIT MARGIN</div>
+                            <div class="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                                <div class="h-3 bg-gradient-to-r from-emerald-400 to-cyan-400" style="width: ${product.margin}%"></div>
+                            </div>
+                            <div class="flex justify-between text-xs mt-2">
+                                <div class="text-emerald-400">${product.margin}%</div>
+                                <div class="font-medium">$${Math.round(product.price - product.cost)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="my-10 border border-dashed border-white/30 rounded-3xl p-5 text-center">
+                        <div class="text-xs uppercase tracking-widest text-violet-300">Suggested ad copy</div>
+                        <div class="italic text-sm mt-3">"POV: you bought these lights for your room and now it's the coolest on the block 😮‍💨"</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="importProduct(${product.id});closeModal()" 
+                                class="py-6 bg-white text-zinc-900 font-semibold rounded-3xl active:bg-amber-200">
+                            ADD TO STORE
+                        </button>
+                        <button onclick="askAIAboutProduct(${product.id});closeModal()" 
+                                class="py-6 border border-white/30 font-medium rounded-3xl">
+                            ASK AI COACH
+                        </button>
+                    </div>
+                </div>
+            </div>`
+            
+            document.getElementById('modal-container').innerHTML = modalHTML
+            document.getElementById('modal-container').classList.remove('hidden')
+            document.getElementById('modal-container').classList.add('flex')
+        }
+        
+        function closeModal() {
+            const modalContainer = document.getElementById('modal-container')
+            modalContainer.classList.add('hidden')
+            modalContainer.classList.remove('flex')
+            modalContainer.innerHTML = ''
+        }
+        
+        function importProduct(id) {
+            closeModal()
+            showToast("Product imported to your store! 🎉", 2200)
+            
+            // Add to studio
+            setTimeout(() => {
+                renderStudioProducts()
+            }, 800)
+        }
+        
+        function renderStudioProducts() {
+            const container = document.getElementById("store-products")
+            container.innerHTML = `
+                <div class="bg-zinc-900 rounded-3xl aspect-square flex flex-col items-center justify-center text-center p-3 text-xs border border-violet-300/30">
+                    <img src="https://picsum.photos/id/201/128/128" class="w-14 h-14 rounded-2xl mb-3 object-cover">
+                    <div class="font-medium text-white text-center leading-tight">RGB LED Lights</div>
+                </div>
+                <div class="bg-zinc-900 rounded-3xl aspect-square flex flex-col items-center justify-center text-center p-3 text-xs">
+                    <img src="https://picsum.photos/id/29/128/128" class="w-14 h-14 rounded-2xl mb-3 object-cover">
+                    <div class="font-medium text-white text-center leading-tight">Mini Blender</div>
+                </div>
+                <div onclick="showImportModal()" class="bg-white/5 border border-dashed border-white/30 rounded-3xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-violet-400 transition-colors">
+                    <i class="fa-solid fa-plus text-4xl text-zinc-400 mb-2"></i>
+                    <div class="text-xs text-zinc-400">Add more</div>
+                </div>
+            `
+        }
+        
+        function showImportModal() {
+            const html = `
+            <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 w-full max-w-md mx-auto rounded-t-3xl p-6">
+                <div class="flex justify-center mb-6">
+                    <div class="px-10 py-2 bg-zinc-800 text-xs rounded-3xl text-violet-300">CONNECT TO ALIEXPRESS / CJDROPSHIPPING</div>
+                </div>
+                <div class="text-center text-2xl font-medium mb-8">What do you want to import?</div>
+                
+                <input type="text" value="Wireless earbuds" class="block w-full bg-zinc-800 border-0 rounded-3xl py-6 px-6 text-center text-lg outline-none">
+                
+                <div onclick="fakeImportComplete()" class="mt-8 py-6 text-center bg-gradient-to-r from-pink-500 to-violet-500 text-white font-semibold rounded-3xl cursor-pointer active:scale-95">IMPORT 3 PRODUCTS</div>
+                
+                <div onclick="closeModal()" class="text-center text-xs text-zinc-400 mt-8 cursor-pointer">cancel</div>
+            </div>`
+            
+            document.getElementById('modal-container').innerHTML = html
+            document.getElementById('modal-container').classList.remove('hidden')
+            document.getElementById('modal-container').classList.add('flex')
+        }
+        
+        function fakeImportComplete() {
+            closeModal()
+            showToast("3 products imported. Check your Studio!", 2500)
+            renderStudioProducts()
+        }
+        
+        function generateViralContent() {
+            showToast("Generating 5 viral hooks using GPT-4o...", 1400)
+            setTimeout(() => {
+                showToast("✅ Hook 1 ready: 'Wait for the end 😭💀'", 2100)
+            }, 1700)
+        }
+        
+        function showProfitCalculator() {
+            const html = `
+            <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 w-full max-w-md mx-auto rounded-t-3xl p-6">
+                <h3 class="text-xl font-semibold mb-6 text-center">Profit Calculator</h3>
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-2">Selling price</label>
+                        <div class="flex items-center bg-zinc-800 rounded-3xl px-6">
+                            <span class="text-4xl text-zinc-400">$</span>
+                            <input id="calc-sell" type="text" value="22.99" class="flex-1 bg-transparent outline-none text-4xl py-5">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-2">Cost per unit (incl. shipping)</label>
+                        <div class="flex items-center bg-zinc-800 rounded-3xl px-6">
+                            <span class="text-4xl text-zinc-400">$</span>
+                            <input id="calc-cost" type="text" value="5.80" class="flex-1 bg-transparent outline-none text-4xl py-5">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-black/40 rounded-3xl p-6">
+                        <div class="flex justify-between text-sm">
+                            <div class="text-zinc-400">Profit per sale</div>
+                            <div id="calc-profit" class="font-mono text-4xl text-emerald-400 font-semibold">$17.19</div>
+                        </div>
+                        <div onclick="calculateProfit()" class="mt-8 text-xs text-center bg-white text-zinc-900 py-4 rounded-3xl font-semibold cursor-pointer">CALCULATE</div>
+                    </div>
+                </div>
+                
+                <div onclick="closeModal()" class="mt-8 text-xs text-center text-zinc-400">close</div>
+            </div>`
+            
+            document.getElementById('modal-container').innerHTML = html
+            document.getElementById('modal-container').classList.remove('hidden')
+            document.getElementById('modal-container').classList.add('flex')
+            
+            // Auto calculate once
+            setTimeout(() => {
+                calculateProfit()
+            }, 300)
+        }
+        
+        function calculateProfit() {
+            const sell = parseFloat(document.getElementById('calc-sell').value) || 23
+            const cost = parseFloat(document.getElementById('calc-cost').value) || 6
+            const profit = (sell - cost).toFixed(2)
+            const profitEl = document.getElementById('calc-profit')
+            if (profitEl) profitEl.textContent = '$' + profit
+        }
+        
+        function openAIExpertPicker() {
+            const backdrop = document.getElementById('expert-picker-backdrop')
+            const grid = document.getElementById('expert-grid')
+            grid.innerHTML = ''
+            
+            experts.forEach(expert => {
+                const el = document.createElement('div')
+                el.className = `glass border border-white/10 rounded-3xl p-5 cursor-pointer active:scale-95 transition-all`
+                el.innerHTML = `
+                    <div class="text-6xl mb-6">${expert.emoji}</div>
+                    <div class="font-semibold">${expert.name}</div>
+                    <div class="text-xs text-zinc-400">${expert.title}</div>
+                `
+                el.onclick = () => {
+                    closeExpertPicker()
+                    setTimeout(() => {
+                        openChatWithExpert(expert.id)
+                    }, 400)
+                }
+                grid.append(el)
+            })
+            
+            backdrop.classList.remove('hidden')
+            backdrop.classList.add('flex')
+        }
+        
+        function closeExpertPicker() {
+            const backdrop = document.getElementById('expert-picker-backdrop')
+            backdrop.classList.add('hidden')
+            backdrop.classList.remove('flex')
+        }
+        
+        function openChatWithExpert(expertId) {
+            currentExpert = expertId
+            const expert = experts[expertId]
+            
+            document.getElementById('current-expert-avatar').innerHTML = expert.emoji
+            document.getElementById('current-expert-avatar').className = `w-9 h-9 bg-${expert.color}-400 rounded-2xl flex items-center justify-center text-xl`
+            document.getElementById('current-expert-name').textContent = expert.name
+            document.getElementById('current-expert-title').textContent = expert.title
+            
+            // Switch to chat page
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'))
+            document.getElementById('page-ai-chat').classList.remove('hidden')
+            
+            renderChatMessages()
+        }
+        
+        function renderChatMessages() {
+            const container = document.getElementById('chat-messages')
+            container.innerHTML = ''
+            
+            const messages = chatHistory[currentExpert] || []
+            
+            messages.forEach(msg => {
+                const bubble = document.createElement('div')
+                bubble.className = `flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`
+                bubble.innerHTML = `
+                    <div class="${msg.type === 'user' ? 'chat-user' : 'chat-ai'} message-bubble">
+                        ${msg.text}
+                    </div>
+                `
+                container.appendChild(bubble)
+            })
+            
+            container.scrollTop = container.scrollHeight
+        }
+        
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input')
+            const text = input.value.trim()
+            if (!text) return
+            
+            // Add user message
+            if (!chatHistory[currentExpert]) chatHistory[currentExpert] = []
+            chatHistory[currentExpert].push({type: 'user', text: text})
+            
+            renderChatMessages()
+            input.value = ''
+            
+            // Simulate AI reply
+            setTimeout(() => {
+                let replyText = "That's a great question. Most beginners overthink the product. Focus on impulse buys under $30."
+                
+                if (text.toLowerCase().includes('tiktok') || text.toLowerCase().includes('video')) {
+                    replyText = "Use trending audio + text overlay that says 'this made me $412 last week'. Works every time."
+                } else if (text.toLowerCase().includes('product') || text.toLowerCase().includes('find')) {
+                    replyText = "The wireless LED lamp with the app control is printing money right now. 74% margin."
+                } else if (text.toLowerCase().includes('how') && text.toLowerCase().includes('start')) {
+                    replyText = "1. Find product. 2. Make store in 15 mins. 3. Run $5/day ads to TikTok. 4. Reinvest profits."
+                }
+                
+                chatHistory[currentExpert].push({type: 'ai', text: replyText})
+                renderChatMessages()
+            }, 1100)
+        }
+        
+        function closeChat() {
+            document.getElementById('page-ai-chat').classList.add('hidden')
+            document.getElementById('page-home').classList.remove('hidden')
+            switchTab(0)
+        }
+        
+        function switchExpert(expertId) {
+            currentExpert = expertId
+            const expert = experts[expertId]
+            document.getElementById('current-expert-avatar').innerHTML = expert.emoji
+            document.getElementById('current-expert-name').textContent = expert.name
+            document.getElementById('current-expert-title').textContent = expert.title
+            renderChatMessages()
+        }
+        
+        function askAIAboutProduct(productId) {
+            openChatWithExpert(1) // open with Product Jax
+            setTimeout(() => {
+                const container = document.getElementById('chat-messages')
+                const newMsg = document.createElement('div')
+                newMsg.className = "flex justify-start"
+                newMsg.innerHTML = `<div class="chat-ai message-bubble">This RGB lamp is converting at 9.4%. Should we test it with a $12 price point?</div>`
+                container.appendChild(newMsg)
+                container.scrollTop = container.scrollHeight
+            }, 1200)
+        }
+        
+        function showToast(message, timeout = 2500) {
+            const toast = document.getElementById('toast')
+            document.getElementById('toast-text').innerHTML = message
+            toast.classList.remove('hidden')
+            toast.style.transform = 'translate(-50%, 0)'
+            
+            setTimeout(() => {
+                toast.style.transform = 'translate(-50%, 80px)'
+                setTimeout(() => {
+                    toast.classList.add('hidden')
+                }, 400)
+            }, timeout)
+        }
+        
+        function claimDailyStreak() {
+            showToast("🔥 +120 XP added. 8 day streak!", 2100)
+        }
+        
+        function completeMilestone() {
+            showToast("Milestone complete! First $500 challenge unlocked 🏆", 2400)
+        }
+        
+        function launchStore() {
+            showToast("Store launched on Shopify! 🎉 Your link: vibedrop.store/kai", 2800)
+            
+            // Confetti
+            launchConfetti()
+        }
+        
+        function launchConfetti() {
+            const colors = ['#a855f7', '#ec4899', '#22d3ee']
+            for (let i = 0; i < 80; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div')
+                    confetti.textContent = ['🪩','✦','💸','🔥'][Math.floor(Math.random()*4)]
+                    confetti.style.position = 'fixed'
+                    confetti.style.zIndex = '99999'
+                    confetti.style.left = Math.random() * 100 + 'vw'
+                    confetti.style.top = '-20px'
+                    confetti.style.fontSize = '18px'
+                    confetti.style.transition = 'transform 3.5s cubic-bezier(0.34,1.56,0.64,1), opacity 3.2s'
+                    document.body.appendChild(confetti)
+                    
+                    const angle = Math.random() * 80 - 30
+                    confetti.style.transform = `rotate(${angle}deg)`
+                    
+                    setTimeout(() => {
+                        const y = 300 + Math.random() * 500
+                        confetti.style.transform = `translateY(${y}px) rotate(${angle + 220}deg)`
+                        confetti.style.opacity = 0
+                    }, 50)
+                    
+                    setTimeout(() => {
+                        confetti.remove()
+                    }, 4200)
+                }, i * 2.5)
+            }
+        }
+        
+        function markLessonComplete(el) {
+            el.innerHTML = `✅ COMPLETED`
+            el.style.color = '#4ade80'
+            showToast('+80 XP • Lesson completed', 1600)
+        }
+        
+        function watchTutorial(n) {
+            const titles = [
+                "How to spy on winning products (2026 edition)",
+                "The exact TikTok that made me $412 in 4 days"
+            ]
+            showToast(`🎬 Playing tutorial: ${titles[n]}`, 3200)
+        }
+        
+        function copyToClipboard(btn) {
+            btn.textContent = "COPIED ✓"
+            setTimeout(() => {
+                btn.textContent = "COPY CAPTION + EMOJI"
+            }, 2100)
+            showToast("Caption copied to clipboard", 1500)
+        }
+        
+        function showEarningsModal() {
+            const html = `
+            <div onclick="event.stopImmediatePropagation()" class="modal bg-zinc-900 w-full max-w-md mx-auto rounded-t-3xl overflow-hidden">
+                <div class="px-6 pt-6 pb-4">
+                    <div class="flex justify-between">
+                        <div class="text-5xl font-semibold text-emerald-300">$1,284</div>
+                        <div class="text-right">
+                            <div class="text-xs text-emerald-400">SEP 2026</div>
+                            <div class="text-xs">4 orders fulfilled</div>
+                        </div>
+                    </div>
+                    <div class="h-2 bg-zinc-700 rounded-3xl mt-8 mb-2">
+                        <div class="h-2 w-4/5 bg-emerald-400 rounded-3xl"></div>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <div class="text-zinc-400">$1,284 earned</div>
+                        <div class="text-emerald-400">+$920 this week</div>
+                    </div>
+                </div>
+                
+                <div class="bg-black/30 px-6 py-8 text-xs space-y-6">
+                    <div class="flex justify-between">
+                        <div>LED Lamp x 12</div>
+                        <div class="font-medium text-emerald-400">$387</div>
+                    </div>
+                    <div class="flex justify-between">
+                        <div>Portable Blender x 7</div>
+                        <div class="font-medium text-emerald-400">$221</div>
+                    </div>
+                    <div class="flex justify-between opacity-40">
+                        <div>Mushroom Lamp x 19</div>
+                        <div class="font-medium">$676</div>
+                    </div>
+                </div>
+                
+                <div onclick="closeModal()" class="text-center py-8 text-xs text-zinc-400 cursor-pointer border-t border-white/10">CLOSE REPORT</div>
+            </div>`
+            document.getElementById('modal-container').innerHTML = html
+            document.getElementById('modal-container').classList.remove('hidden')
+            document.getElementById('modal-container').classList.add('flex')
+        }
+        
+        function showProfileModal() {
+            showToast("Profile • Badges • Payouts coming in v2 👀", 1700)
+        }
+        
+        function quickFilter(el) {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active', 'bg-violet-500', 'text-white'))
+            el.classList.add('active', 'bg-violet-500', 'text-white')
+            simulateScrape()
+        }
+        
+        // Initialize everything
+        function initializeApp() {
+            // Tailwind ready
+            initializeTailwind()
+            
+            // Render dynamic content
+            renderTrending()
+            renderProductList()
+            renderStudioProducts()
+            
+            // Default page
+            document.getElementById('page-home').classList.remove('hidden')
+            
+            // Keyboard support for demo
+            document.addEventListener('keydown', function(e) {
+                if (e.metaKey && e.key === "k") {
+                    e.preventDefault()
+                    switchTab(1)
+                    document.getElementById('search-input').focus()
+                }
+            })
+            
+            // Show welcome toast
+            setTimeout(() => {
+                showToast("Welcome back! Your store made <span class='font-semibold text-emerald-400'>$81 today</span>", 3400)
+            }, 2100)
+            
+            // PWA install simulation
+            console.log('%cVibeDrop PWA ready. All animations, glassmorphism, AI chat with 4 experts, product scraper, store builder, marketing tools, and academy included.', 'color:#a78bfa; font-size:10px')
+        }
+        
+        // Boot app
+        window.onload = initializeApp
+    </script>
+</body>
+</html>
