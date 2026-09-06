@@ -110,6 +110,7 @@
             country: 'SE',
             currency: 'SEK',
             experienceLevel: 'intermediate', // 'rookie' | 'intermediate' | 'expert'
+            onboardingCompleted: false,
             aiSettings: {
               provider: 'groq', // 'groq' | 'openrouter'
               apiKey: '',
@@ -208,13 +209,18 @@
             { id: 'SE-8923', customer: 'Alexander Ek', city: 'Malmö', product: 'AuraLum Ergonomic Pillow x2', total: 849, method: 'Stripe', status: 'Delivered', tracking: 'PN891944SE', date: '2026-09-03' }
           ],
           uiState: {
-            activeTab: 'pipeline', // pipeline, scraper, composer, operations, marketing, compliance, settings
+            activeTab: 'pipeline', // pipeline, scraper, composer, operations, marketing, compliance, settings, about
             theme: 'light',
             aiDrawerOpen: false,
             aiChatHistory: [],
             selectedProductCard: 'prod_1',
             storePreviewModal: false,
-            rawHtmlModal: false
+            rawHtmlModal: false,
+            onboardingModalOpen: false,
+            onboardingStep: 0,
+            aboutSubTab: 'overview', // 'overview' | 'manual' | 'faq'
+            activeFaqCategory: 'all',
+            expandedFaqs: [0]
           }
         };
       }
@@ -224,12 +230,22 @@
           const raw = localStorage.getItem(this.STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
-            return { ...this.getDefaultState(), ...parsed };
+            const def = this.getDefaultState();
+            const merged = { ...def, ...parsed };
+            merged.userProfile = { ...def.userProfile, ...(parsed.userProfile || {}) };
+            merged.uiState = { ...def.uiState, ...(parsed.uiState || {}) };
+            // If onboarding not completed, open modal for first-time onboarding
+            if (!merged.userProfile.onboardingCompleted) {
+              merged.uiState.onboardingModalOpen = true;
+            }
+            return merged;
           }
         } catch (e) {
           console.warn('Failed to parse localStorage, resetting to default', e);
         }
-        return this.getDefaultState();
+        const initial = this.getDefaultState();
+        initial.uiState.onboardingModalOpen = true;
+        return initial;
       }
 
       saveState() {
@@ -445,7 +461,13 @@
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+              <!-- Interactive Tour Trigger -->
+              <button id="btn-open-onboarding" class="touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs transition bg-blue-50 text-[#2563EB] hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/50 shadow-xs" title="Launch Interactive Guided Onboarding Tour">
+                <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                <span>Tour</span>
+              </button>
+
               <!-- Experience Level Switcher -->
               <div class="flex bg-[#F1F5F9] dark:bg-slate-800 p-1 rounded-xl border border-[#E5E7EB] dark:border-slate-700 text-xs">
                 <button id="btn-lvl-rookie" class="px-3 py-1.5 rounded-lg font-semibold transition ${experienceLevel === 'rookie' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A]'}">Rookie</button>
@@ -488,6 +510,9 @@
             ${this.renderActiveView(state.uiState.activeTab, state)}
           </main>
 
+          <!-- Interactive Onboarding Stepper Modal -->
+          ${state.uiState.onboardingModalOpen ? this.renderOnboardingModal(state) : ''}
+
           <!-- Floating AI Button & Drawer -->
           ${this.renderAIFloatingWidget(state)}
 
@@ -506,7 +531,8 @@
           { id: 'operations', label: 'Calculators & Orders', icon: 'calculator', rookie: false },
           { id: 'marketing', label: 'Marketing Hooks', icon: 'flame', rookie: false },
           { id: 'compliance', label: 'Swedish/EU Tax', icon: 'shield-check', rookie: false },
-          { id: 'settings', label: 'BYOK & Settings', icon: 'settings', rookie: true }
+          { id: 'settings', label: 'BYOK & Settings', icon: 'settings', rookie: true },
+          { id: 'about', label: 'About & Manual', icon: 'book-open', rookie: true }
         ];
 
         return tabs
@@ -535,6 +561,7 @@
           case 'marketing': return this.renderMarketingView(state);
           case 'compliance': return this.renderComplianceView(state);
           case 'settings': return this.renderSettingsView(state);
+          case 'about': return this.renderAboutView(state);
           default: return this.renderPipelineView(state);
         }
       }
@@ -1265,6 +1292,33 @@
                 </button>
               </div>
             </div>
+
+            <!-- Onboarding & Manual Controls -->
+            <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                <div>
+                  <h3 class="font-bold text-sm text-[#0F172A] dark:text-white">Onboarding & App Documentation</h3>
+                  <p class="text-xs text-[#64748B] dark:text-slate-400">Replay the guided stepper tour or browse the comprehensive Scandinavian e-commerce manual.</p>
+                </div>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${state.userProfile.onboardingCompleted ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800'} w-fit">
+                  ${state.userProfile.onboardingCompleted ? '✓ Tour Completed' : 'Pending Review'}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-3 pt-2">
+                <button id="btn-replay-tour" class="touch-target px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/50 font-bold text-xs flex items-center gap-2 active:scale-95 transition">
+                  <i data-lucide="compass" class="w-4 h-4"></i>
+                  <span>Replay Guided Onboarding Tour</span>
+                </button>
+                <button id="btn-reset-tour" class="touch-target px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 font-medium text-xs flex items-center gap-2 active:scale-95 transition">
+                  <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  <span>Reset Tour Status</span>
+                </button>
+                <button id="btn-open-manual" class="touch-target px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-bold text-xs flex items-center gap-2 active:scale-95 transition">
+                  <i data-lucide="book-open" class="w-4 h-4"></i>
+                  <span>Open Knowledge Hub & FAQ</span>
+                </button>
+              </div>
+            </div>
           </div>
         `;
       }
@@ -1279,7 +1333,8 @@
           operations: 'Financial & VAT Advisor',
           marketing: 'Viral TikTok Scriptwriter',
           compliance: 'Swedish Legal Advisor',
-          settings: 'Technical BYOK Architect'
+          settings: 'Technical BYOK Architect',
+          about: 'Platform Guide & Manual Specialist'
         }[activeTab] || 'E-Com Specialist';
 
         return `
@@ -1330,6 +1385,685 @@
                 <i data-lucide="send" class="w-4 h-4"></i>
               </button>
             </div>
+          </div>
+        `;
+      }
+
+      // --- Guided Onboarding Stepper Modal ---
+      renderOnboardingModal(state) {
+        const step = state.uiState.onboardingStep || 0;
+        const totalSteps = 5;
+
+        const tourSteps = [
+          {
+            badge: 'Welcome to HustlePipe',
+            title: 'Your Nordic DTC Operations Engine',
+            icon: 'compass',
+            color: 'blue',
+            desc: 'HustlePipe is a complete, mobile-first Scandinavian and European e-commerce automation workspace. Transition from raw supplier links to live, Skatteverket-compliant storefronts in minutes—without paying $150+/month for fragmented Shopify apps.',
+            takeaways: [
+              { icon: 'zap', title: '15-Minute Pipeline', text: 'Linear roadmap from product discovery to ready-to-test Swedish store.' },
+              { icon: 'shield-check', title: 'Skatteverket Ready', text: 'Pre-configured with Swedish 25% MOMS, 14-day ångerrätt, and PostNord.' },
+              { icon: 'lock', title: 'Privacy-First BYOK', text: 'Connect your own AI keys with zero server tracking and 100% local persistence.' }
+            ],
+            nextLabel: 'Next: Product Scraper →'
+          },
+          {
+            badge: 'Step 2 of 5: Discovery & Viability',
+            title: 'Automated Product Scraper & Margins',
+            icon: 'search',
+            color: 'emerald',
+            desc: 'Paste product URLs from AliExpress, CJ Dropshipping, or 1688. HustlePipe instantly parses supplier costs in SEK, estimates PostNord delivery freight, and checks if the item satisfies our strict 60%+ gross margin requirement.',
+            takeaways: [
+              { icon: 'dollar-sign', title: 'Instant Currency Conversion', text: 'Supplier COGS automatically projected into Swedish Kronor (SEK).' },
+              { icon: 'percent', title: '60%+ Gross Margin Rule', text: 'Guarantees healthy margins after ad acquisition costs and shipping.' },
+              { icon: 'arrow-down-to-line', title: 'One-Click Catalog Import', text: 'Directly transfer vetted winning products into your active storefront.' }
+            ],
+            nextLabel: 'Next: Store Builder →'
+          },
+          {
+            badge: 'Step 3 of 5: Conversion Design',
+            title: 'Visual Scandinavian Store Composer',
+            icon: 'layout-template',
+            color: 'blue',
+            desc: 'Compose clean, minimalist mobile-first product landing pages using modular blocks. Build high trust with Swedish consumers by embedding Swish Handel, Klarna 30-day invoice promises, and PostNord 24h delivery promises.',
+            takeaways: [
+              { icon: 'layers', title: 'Modular Block Architecture', text: 'Reorder Hero, Problem/Solution, Showcase, and Swedish Trust Badges.' },
+              { icon: 'smartphone', title: 'Swish & Klarna Checkouts', text: 'Reduces Swedish checkout abandonment by up to 40% vs credit cards.' },
+              { icon: 'eye', title: 'Live Nordic Preview Modal', text: 'Simulate the exact Scandinavian customer purchasing flow in real time.' }
+            ],
+            nextLabel: 'Next: 25% MOMS & ROAS →'
+          },
+          {
+            badge: 'Step 4 of 5: Financial Precision',
+            title: 'Skatteverket 25% MOMS & Breakeven ROAS',
+            icon: 'calculator',
+            color: 'amber',
+            desc: 'Swedish consumer protection law strictly requires retail prices to include 25% MOMS. HustlePipe automatically computes your net revenue (Price / 1.25), exact tax liability for Skatteverket, and breakeven advertising ROAS for TikTok and Meta.',
+            takeaways: [
+              { icon: 'receipt', title: 'Statutory 25% MOMS Math', text: 'Accurately separates net revenue from tax liabilities before ad spending.' },
+              { icon: 'target', title: 'Breakeven ROAS Guardrail', text: 'Know your exact maximum CPA so you never run unprofitable ad campaigns.' },
+              { icon: 'truck', title: 'PostNord Order Tracking', text: 'Simulate customer order statuses from payment to postal delivery.' }
+            ],
+            nextLabel: 'Next: BYOK AI & Exports →'
+          },
+          {
+            badge: 'Step 5 of 5: Launch & Scale',
+            title: 'Contextual BYOK AI & Standalone Export',
+            icon: 'sparkles',
+            color: 'purple',
+            desc: 'Connect your Groq (Llama 3.3 70B) or OpenRouter API key for high-speed AI assistance that shifts roles across tabs (Product Researcher, CRO Designer, Swedish Tax Advisor, TikTok Copywriter). Export your finished store as standalone HTML or Shopify CSV.',
+            takeaways: [
+              { icon: 'bot', title: 'Specialized Persona Switching', text: 'Dynamic AI tailored to the exact screen and task you are currently working on.' },
+              { icon: 'file-code', title: 'Standalone Single-File HTML', text: 'Download a self-contained bundle ready to host on Loopia, Cloudflare, or GitHub.' },
+              { icon: 'database', title: 'Shopify / WooCommerce CSV', text: 'Instantly import products, pricing, and assets into established stores.' }
+            ],
+            nextLabel: 'Finish Tour & Get Started 🚀'
+          }
+        ];
+
+        const current = tourSteps[step] || tourSteps[0];
+
+        return `
+          <div class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 fade-in">
+            <div class="bg-white dark:bg-[#0F172A] w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-[#E5E7EB] dark:border-slate-800">
+              
+              <!-- Stepper Header & Progress -->
+              <div class="p-5 sm:p-6 border-b border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/60">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-pulse"></span>
+                    <span class="text-xs font-bold text-[#2563EB] dark:text-blue-400 uppercase tracking-wider">HustlePipe Guided Tour</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-[#64748B] dark:text-slate-400">Step ${step + 1} of ${totalSteps}</span>
+                    <button id="btn-close-onboarding" class="touch-target p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition" title="Close Onboarding">
+                      <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Visual Stepper Progress Indicator -->
+                <div class="relative flex items-center justify-between">
+                  <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 dark:bg-slate-800 w-full z-0 rounded-full"></div>
+                  <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-[#2563EB] transition-all duration-300 z-0 rounded-full" style="width: ${(step / (totalSteps - 1)) * 100}%"></div>
+                  
+                  ${tourSteps.map((s, i) => {
+                    const isCompleted = i < step;
+                    const isActive = i === step;
+                    return `
+                      <button data-tour-step="${i}" class="relative z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-xs transition-all active:scale-90 ${
+                        isActive
+                          ? 'bg-[#2563EB] text-white ring-4 ring-blue-500/20 shadow-md shadow-blue-500/30'
+                          : isCompleted
+                          ? 'bg-[#2563EB] text-white hover:bg-blue-700'
+                          : 'bg-white dark:bg-slate-800 border-2 border-[#E5E7EB] dark:border-slate-700 text-[#64748B] dark:text-slate-400 hover:border-blue-400'
+                      }" title="Jump to Step ${i + 1}: ${s.title}">
+                        ${isCompleted ? '<i data-lucide="check" class="w-4 h-4"></i>' : (i + 1)}
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <!-- Step Content Body -->
+              <div class="p-6 sm:p-8 flex-1 overflow-y-auto space-y-5">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#2563EB] dark:text-blue-400 shrink-0 shadow-xs">
+                    <i data-lucide="${current.icon}" class="w-6 h-6"></i>
+                  </div>
+                  <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-[#2563EB] dark:text-blue-400">${current.badge}</span>
+                    <h2 class="text-lg sm:text-xl font-bold text-[#0F172A] dark:text-white leading-tight">${current.title}</h2>
+                  </div>
+                </div>
+
+                <p class="text-xs sm:text-sm text-[#475569] dark:text-slate-300 leading-relaxed">
+                  ${current.desc}
+                </p>
+
+                <!-- 3 Key Highlights -->
+                <div class="space-y-2.5 pt-1">
+                  ${current.takeaways.map(t => `
+                    <div class="flex items-start gap-3 p-3 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-[#2563EB] dark:text-blue-300 shrink-0 mt-0.5">
+                        <i data-lucide="${t.icon}" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div>
+                        <h4 class="font-bold text-xs text-[#0F172A] dark:text-white">${t.title}</h4>
+                        <p class="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5 leading-normal">${t.text}</p>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Navigation Controls -->
+              <div class="p-4 sm:p-5 border-t border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/60 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  ${step > 0 ? `
+                    <button id="btn-tour-prev" class="touch-target px-4 py-2 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 font-semibold text-xs transition active:scale-95 flex items-center gap-1.5 shadow-xs">
+                      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                      <span>Previous</span>
+                    </button>
+                  ` : ''}
+                  <button id="btn-tour-skip" class="touch-target px-3.5 py-2 rounded-xl text-xs font-semibold text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition">
+                    Skip Tour
+                  </button>
+                </div>
+
+                <div>
+                  ${step < totalSteps - 1 ? `
+                    <button id="btn-tour-next" class="touch-target px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2">
+                      <span>Next Step</span>
+                      <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                  ` : `
+                    <button id="btn-tour-finish" class="touch-target px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm active:scale-95 transition shadow-xs flex items-center gap-2">
+                      <span>Finish & Get Started</span>
+                      <i data-lucide="rocket" class="w-4 h-4"></i>
+                    </button>
+                  `}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+
+      // --- About / Information System Page ---
+      renderAboutView(state) {
+        const subTab = state.uiState.aboutSubTab || 'overview';
+        const activeCategory = state.uiState.activeFaqCategory || 'all';
+        const expandedFaqs = state.uiState.expandedFaqs || [0];
+
+        const faqData = [
+          {
+            category: 'getting_started',
+            categoryLabel: 'Getting Started',
+            q: 'What makes HustlePipe different from standard platforms like Shopify or WooCommerce?',
+            a: 'HustlePipe is designed specifically as an all-in-one Scandinavian DTC operations workspace with zero monthly app subscriptions. Traditional platforms require $39+/mo plus $150+/mo in recurring app fees for reviews, Swedish MOMS VAT formatting, upsells, and currency converters. HustlePipe runs 100% in your browser, integrates automated 25% Skatteverket tax calculations, and lets you export production-ready standalone HTML stores or Shopify-compatible CSV files anytime.'
+          },
+          {
+            category: 'getting_started',
+            categoryLabel: 'Getting Started',
+            q: 'How do the three Experience Modes (Rookie, Standard, Expert CLI) work?',
+            a: 'HustlePipe adapts its interface and AI mentor to your level of experience. Rookie Mode streamlines the navigation to core discovery, store composition, and guided steps with simple terminology. Standard Mode unlocks full operational calculators (25% MOMS and Breakeven ROAS), simulated orders, and viral TikTok copywriters. Expert CLI Mode enables a developer terminal (Cmd+K) for rapid keyboard commands like /scrape [url], /export, and /calc.'
+          },
+          {
+            category: 'getting_started',
+            categoryLabel: 'Getting Started',
+            q: 'How do I replay or reset the Guided Onboarding Stepper Tour?',
+            a: 'You can replay the 5-step guided tour anytime by clicking the Tour button with the compass icon in the top header, or by going to BYOK and Settings and clicking Replay Guided Onboarding Tour. You can also reset completion status so the tour reappears on reload.'
+          },
+          {
+            category: 'swedish_tax',
+            categoryLabel: 'Swedish Tax & Legal',
+            q: 'Do I need a registered Swedish company (Enskild Firma or Aktiebolag) to test products?',
+            a: 'You can begin testing concepts and validating market demand immediately. Under Swedish regulations, hobby sales under statutory hobby earnings thresholds can be conducted while testing. Once sales become continuous, professional, or cross 80,000 SEK in annual turnover, registering an Enskild Firma (sole proprietorship with F-skatt) or an Aktiebolag (AB) via Verksamt.se is mandatory. HustlePipe includes a dedicated Swedish/EU Tax module with registration checklists.'
+          },
+          {
+            category: 'swedish_tax',
+            categoryLabel: 'Swedish Tax & Legal',
+            q: 'Why must prices include 25% Swedish MOMS and how is it calculated?',
+            a: 'Under the Swedish Price Information Act (Prisinformationslagen), all B2C prices shown to consumers must include 25% VAT (MOMS). The exact formula is: Net Sales Price = Gross Price / 1.25, and MOMS Owed = Gross Price - Net Sales Price. For example, a product sold at 449 SEK contains 359.20 SEK in net company revenue and 89.80 SEK in MOMS owed to Skatteverket. HustlePipe computes this automatically so you never get caught with surprise tax liabilities.'
+          },
+          {
+            category: 'swedish_tax',
+            categoryLabel: 'Swedish Tax & Legal',
+            q: 'What is the mandatory 14-day "Ångerrätt" (Lag om distansavtal) under Swedish law?',
+            a: 'According to Lag (2005:59) om distansavtal och avtal utanför affärslokaler, Swedish consumers have the statutory legal right to cancel their purchase and return physical products within 14 calendar days of receipt. As an online merchant, you must provide clear withdrawal information and return instructions. HustlePipe embeds statutory Swedish compliance notes and trust badges directly into all generated storefronts.'
+          },
+          {
+            category: 'payments_shipping',
+            categoryLabel: 'Payments & Shipping',
+            q: 'How do Swish Handel and Klarna work on exported storefronts?',
+            a: 'Over 80% of Swedish mobile transactions use Swish or Klarna. HustlePipe includes simulated 1-click Swish and Klarna checkout flows right out of the box. For live deployments, you can link your merchant Swish Handel number via your Swedish bank (Swedbank, SEB, Handelsbanken) or integrate Stripe / Klarna Checkout scripts directly into the exported standalone HTML bundle.'
+          },
+          {
+            category: 'payments_shipping',
+            categoryLabel: 'Payments & Shipping',
+            q: 'Which shipping carriers are best for Swedish and Nordic customers?',
+            a: 'Swedish consumers strongly favor PostNord (with deliveries to local PostNord Paketbox lockers or service points / ombud), followed by DHL eCommerce and DB Schenker. Sourcing via PostNord Direct Line or YunExpress Sweden Tracked ensures full end-to-end postal tracking in 5–9 business days.'
+          },
+          {
+            category: 'store_export',
+            categoryLabel: 'Storefronts & Export',
+            q: 'How do I export my completed storefront to a live domain?',
+            a: 'Navigate to the Store Builder tab and click "Export Standalone Bundle (.html)". HustlePipe produces a self-contained, single-file HTML package containing responsive Tailwind styles, product photography, block layouts, and the Swish checkout flow. Upload this single file to any web host (Loopia, Cloudflare Pages, Netlify, or GitHub Pages) and point your .se domain to it.'
+          },
+          {
+            category: 'store_export',
+            categoryLabel: 'Storefronts & Export',
+            q: 'Can I export my scraped products into an existing Shopify store?',
+            a: 'Yes! In the Store Builder tab, click "Export Products to CSV". HustlePipe formats all scraped product information, Swedish product descriptions, pricing in SEK, and image URLs into a standardized Shopify CSV template ready for one-click import under Shopify Admin → Products → Import.'
+          },
+          {
+            category: 'ai_byok',
+            categoryLabel: 'AI Engine & BYOK',
+            q: 'What is BYOK (Bring Your Own Key) and how does it protect my privacy?',
+            a: 'BYOK allows you to plug in your own API key from Groq Cloud (offering ultra-fast Llama 3.3 70B for fractions of a cent) or OpenRouter. Your API key and prompt history are stored strictly in your browser\'s local storage. Zero data passes through intermediary servers. Even without an API key, HustlePipe\'s built-in offline simulation engine provides realistic Scandinavian copy and margin guidance.'
+          },
+          {
+            category: 'ai_byok',
+            categoryLabel: 'AI Engine & BYOK',
+            q: 'What should I do if I encounter AI API rate limits or errors?',
+            a: 'If you encounter rate limits (HTTP 429), confirm your Groq or OpenRouter account has active usage quotas. You can also switch models in BYOK and Settings (e.g., llama-3.3-70b-versatile or mixtral-8x7b-32768). You can also clear your API key to immediately fall back to the built-in offline Nordic engine without disruption.'
+          }
+        ];
+
+        const filteredFaqs = activeCategory === 'all' 
+          ? faqData 
+          : faqData.filter(item => item.category === activeCategory);
+
+        return `
+          <div class="space-y-6">
+            <!-- Header with Sub-Tab Switcher -->
+            <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#2563EB]"></span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-[#2563EB] dark:text-blue-400">Documentation & Knowledge Base</span>
+                </div>
+                <h2 class="text-xl font-bold text-[#0F172A] dark:text-white">About HustlePipe & User Guide</h2>
+                <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Master Scandinavian DTC dropshipping, Swedish 25% MOMS rules, and client-side pipeline workflows.</p>
+              </div>
+
+              <!-- Sub-Tab Pills -->
+              <div class="flex bg-[#F1F5F9] dark:bg-slate-800/90 p-1 rounded-xl border border-[#E5E7EB] dark:border-slate-700 text-xs font-semibold shrink-0">
+                <button data-about-subtab="overview" class="touch-target px-4 py-2 rounded-lg transition-all ${subTab === 'overview' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'}">
+                  Overview
+                </button>
+                <button data-about-subtab="manual" class="touch-target px-4 py-2 rounded-lg transition-all ${subTab === 'manual' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'}">
+                  Detailed Manual
+                </button>
+                <button data-about-subtab="faq" class="touch-target px-4 py-2 rounded-lg transition-all ${subTab === 'faq' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'}">
+                  FAQ Accordion
+                </button>
+              </div>
+            </div>
+
+            <!-- TAB 1: OVERVIEW -->
+            ${subTab === 'overview' ? `
+              <div class="space-y-5 fade-in">
+                <!-- Hero Introduction Card -->
+                <div class="tactile-card bg-linear-to-r from-blue-50/70 via-white to-indigo-50/70 dark:from-slate-800 dark:via-[#1E293B] dark:to-slate-800 p-6 sm:p-8 rounded-2xl border border-blue-100 dark:border-slate-800 shadow-xs">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="max-w-2xl">
+                      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-[#2563EB] dark:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        SideForge Engine v2.0
+                      </span>
+                      <h3 class="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white mt-2">
+                        Scandinavian & European DTC Operations Hub
+                      </h3>
+                      <p class="text-xs sm:text-sm text-[#475569] dark:text-slate-300 mt-2 leading-relaxed">
+                        HustlePipe is a single-screen, zero-backend web workspace designed to take dropshipping operators from product discovery to Skatteverket-compliant launch in under 15 minutes.
+                      </p>
+                    </div>
+                    <div class="flex flex-wrap sm:flex-col gap-2 shrink-0">
+                      <button id="btn-about-launch-tour" class="touch-target px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition shadow-xs">
+                        <i data-lucide="compass" class="w-4 h-4"></i>
+                        <span>Start Stepper Tour</span>
+                      </button>
+                      <button id="btn-about-open-manual" class="touch-target px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[#0F172A] dark:text-slate-200 border border-[#E5E7EB] dark:border-slate-700 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>Read Full Manual</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5 Structural Concept Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  
+                  <!-- 1. What the Application Is -->
+                  <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#2563EB] dark:text-blue-400">
+                      <i data-lucide="layers" class="w-5 h-5"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-[#0F172A] dark:text-white">1. What HustlePipe Is</h4>
+                    <p class="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
+                      A self-contained client-side pipeline unifying supplier scraping, margin auditing, drag-and-drop Scandinavian storefront assembly, and BYOK AI marketing into a single interface. Built with vanilla ES6 and Tailwind CSS for instant loading and zero server dependencies.
+                    </p>
+                    <ul class="text-xs text-[#64748B] dark:text-slate-400 space-y-1.5 pt-1">
+                      <li class="flex items-center gap-2">✓ Single-file architecture with zero external Node runtime required</li>
+                      <li class="flex items-center gap-2">✓ Centralized state with encrypted localStorage persistence</li>
+                    </ul>
+                  </div>
+
+                  <!-- 2. The Problem It Solves -->
+                  <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400">
+                      <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-[#0F172A] dark:text-white">2. The Problem It Solves</h4>
+                    <p class="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
+                      Mainstream platforms like Shopify suffer from "app fatigue"—forcing founders to pay $150–$300/month for reviews, currency conversion, Swedish VAT formatting, and page builders before making a single sale. Furthermore, American-centric tools neglect Swedish 25% MOMS rules and Swish/Klarna checkout expectations.
+                    </p>
+                    <ul class="text-xs text-[#64748B] dark:text-slate-400 space-y-1.5 pt-1">
+                      <li class="flex items-center gap-2">✓ Eliminates recurring SaaS subscription bloat</li>
+                      <li class="flex items-center gap-2">✓ Corrects dangerous VAT math errors that cause Skatteverket tax debts</li>
+                    </ul>
+                  </div>
+
+                  <!-- 3. Who Target Users Are -->
+                  <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-[#0F172A] dark:text-white">3. Who Target Users Are</h4>
+                    <p class="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
+                      Engineered for three distinct operator cohorts across the Nordic and European e-commerce space:
+                    </p>
+                    <div class="space-y-2 pt-1">
+                      <div class="p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800 text-xs">
+                        <span class="font-bold text-[#0F172A] dark:text-white">Rookies:</span> Step-by-step guidance without confusing industry jargon.
+                      </div>
+                      <div class="p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800 text-xs">
+                        <span class="font-bold text-[#0F172A] dark:text-white">Standard DTC Brands:</span> Rapid margin modeling, breakeven ROAS formulas, and viral hooks.
+                      </div>
+                      <div class="p-2.5 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800 text-xs">
+                        <span class="font-bold text-[#0F172A] dark:text-white">Agencies & Power Users:</span> CLI keyboard speed (Cmd+K), standalone HTML exports, and custom CSS.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 4. How Users Interact With It -->
+                  <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                      <i data-lucide="git-commit" class="w-5 h-5"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-[#0F172A] dark:text-white">4. How Users Interact With It</h4>
+                    <p class="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
+                      HustlePipe provides a structured 6-stage roadmap complemented by an omnipresent contextual AI assistant:
+                    </p>
+                    <ol class="text-xs text-[#64748B] dark:text-slate-400 space-y-1.5 pt-1 list-decimal list-inside">
+                      <li><strong>Configure Profile:</strong> Set Sweden (SEK) and 25% MOMS VAT baseline.</li>
+                      <li><strong>Scrape Product:</strong> Enter supplier URL to vet unit economics and 60%+ gross margin.</li>
+                      <li><strong>Assemble Store:</strong> Customize modular Scandinavian blocks, Swish & PostNord badges.</li>
+                      <li><strong>Audit Finances:</strong> Verify net revenues, tax liabilities, and breakeven ROAS.</li>
+                      <li><strong>Generate Marketing:</strong> Craft TikTok hooks with psychological triggers.</li>
+                      <li><strong>Launch & Export:</strong> Download single-file standalone HTML or Shopify CSV.</li>
+                    </ol>
+                  </div>
+
+                </div>
+
+                <!-- 5. Why HustlePipe Is Invaluable -->
+                <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                      <i data-lucide="gem" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-base font-bold text-[#0F172A] dark:text-white">5. Why HustlePipe Is Invaluable</h4>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400">Core competitive advantages over traditional e-commerce platforms.</p>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <span class="text-lg mb-1 block">🇸🇪</span>
+                      <h5 class="font-bold text-[#0F172A] dark:text-white">Nordic Localization</h5>
+                      <p class="text-[#64748B] dark:text-slate-400 text-[11px] mt-1">Pre-configured with Swish, Klarna, PostNord, and statutory 14-day ångerrätt.</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <span class="text-lg mb-1 block">🔒</span>
+                      <h5 class="font-bold text-[#0F172A] dark:text-white">Private BYOK AI</h5>
+                      <p class="text-[#64748B] dark:text-slate-400 text-[11px] mt-1">API keys stay securely in local browser storage; zero third-party telemetry.</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <span class="text-lg mb-1 block">⚖️</span>
+                      <h5 class="font-bold text-[#0F172A] dark:text-white">Skatteverket Accurate</h5>
+                      <p class="text-[#64748B] dark:text-slate-400 text-[11px] mt-1">Precise 25% MOMS calculations (Price / 1.25) to avoid catastrophic tax debts.</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <span class="text-lg mb-1 block">⚡</span>
+                      <h5 class="font-bold text-[#0F172A] dark:text-white">Zero App Subscriptions</h5>
+                      <p class="text-[#64748B] dark:text-slate-400 text-[11px] mt-1">Save over 2,000 SEK/month compared to bloated multi-app store stacks.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- TAB 2: DETAILED MANUAL -->
+            ${subTab === 'manual' ? `
+              <div class="space-y-6 fade-in text-xs sm:text-sm">
+                
+                <!-- Quick Navigation Bar -->
+                <div class="tactile-card bg-[#F8F9FA] dark:bg-slate-900 p-4 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 flex items-center gap-2 overflow-x-auto scrollbar-none text-xs">
+                  <span class="text-[#64748B] dark:text-slate-400 font-bold shrink-0">Sections:</span>
+                  <a href="#manual-sec-1" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 text-[#0F172A] dark:text-slate-200 font-medium hover:text-[#2563EB] shrink-0">1. Core Architecture</a>
+                  <a href="#manual-sec-2" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 text-[#0F172A] dark:text-slate-200 font-medium hover:text-[#2563EB] shrink-0">2. Operator Instructions</a>
+                  <a href="#manual-sec-3" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 text-[#0F172A] dark:text-slate-200 font-medium hover:text-[#2563EB] shrink-0">3. Common Workflows</a>
+                  <a href="#manual-sec-4" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 text-[#0F172A] dark:text-slate-200 font-medium hover:text-[#2563EB] shrink-0">4. Rules of Thumb</a>
+                  <a href="#manual-sec-5" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E7EB] dark:border-slate-700 text-[#0F172A] dark:text-slate-200 font-medium hover:text-[#2563EB] shrink-0">5. Expert CLI</a>
+                </div>
+
+                <!-- Section 1: Core Concepts -->
+                <div id="manual-sec-1" class="tactile-card bg-white dark:bg-[#1E293B] p-6 sm:p-7 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-4">
+                  <div class="flex items-center gap-3 border-b border-[#E5E7EB] dark:border-slate-800 pb-3">
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 font-bold flex items-center justify-center text-xs">1</span>
+                    <h3 class="text-base font-bold text-[#0F172A] dark:text-white">Core Concepts & Scandinavian E-Commerce Architecture</h3>
+                  </div>
+                  <p class="text-[#475569] dark:text-slate-300 leading-relaxed">
+                    Scandinavian e-commerce differs significantly from the Anglo-American model. Swedish consumers have extraordinarily high expectations regarding payment security, delivery speed, and statutory return rights.
+                  </p>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <h4 class="font-bold text-[#0F172A] dark:text-white mb-1.5">The 25% MOMS Principle</h4>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">
+                        In Sweden, displaying net prices to consumers is illegal under Prisinformationslagen. 25% MOMS is an *inclusive* tax. If your sale price is 449 SEK, your net company turnover is <strong>359.20 SEK</strong> (449 / 1.25), and <strong>89.80 SEK</strong> is owed to Skatteverket. Neglecting this leaves operators with negative net margins after ad spend.
+                      </p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <h4 class="font-bold text-[#0F172A] dark:text-white mb-1.5">Swish & Klarna Trust Badges</h4>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">
+                        Credit card form abandonment exceeds 55% in the Nordics. Integrating Swish and Klarna badges boosts mobile checkout conversion by up to 40%. Swedish buyers treat Swish as the universal standard for peer-to-peer and merchant payments.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section 2: Step-by-Step Operator Instructions -->
+                <div id="manual-sec-2" class="tactile-card bg-white dark:bg-[#1E293B] p-6 sm:p-7 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-4">
+                  <div class="flex items-center gap-3 border-b border-[#E5E7EB] dark:border-slate-800 pb-3">
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 font-bold flex items-center justify-center text-xs">2</span>
+                    <h3 class="text-base font-bold text-[#0F172A] dark:text-white">Step-by-Step Operator Instructions</h3>
+                  </div>
+
+                  <div class="space-y-3">
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Stage 1: Configure Store Profile & VAT</h5>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Open the <strong>Pipeline</strong> tab. Confirm Sweden as your base country and verify the 25% MOMS rate. Ensure that currency is set to SEK.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Stage 2: Connect BYOK AI Key</h5>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Navigate to <strong>BYOK & Settings</strong>. Select Groq Cloud (recommended for ultra-fast Llama 3.3 70B generation) or OpenRouter. Paste your API key and save. If no key is available, the built-in offline simulation assistant will engage automatically.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Stage 3: Scrape & Select Winning Products</h5>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Go to the <strong>Scraper</strong> tab. Paste a supplier link or click "Run Product Scraper". The engine checks if the product satisfies the 60%+ gross margin rule. Click "Import to Active Store" to inject the product into your catalog.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Stage 4: Build Storefront with Modular Blocks</h5>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">In <strong>Store Builder</strong>, customize the Hero headline, Problem/Solution text, and Swedish Trust Badges. Click "Interactive Preview" to test the exact consumer purchasing flow.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Stage 5: Audit Unit Economics & Breakeven ROAS</h5>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Visit <strong>Calculators & Orders</strong>. Enter your supplier COGS and desired retail price. The calculator reveals your exact net profit after 25% MOMS and your Breakeven ROAS limit for Meta & TikTok advertising.</p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Stage 6: Generate Viral UGC Hooks & Export</h5>
+                      <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Open <strong>Marketing Hooks</strong> to generate Swedish TikTok scripts. When ready, download your standalone `.html` bundle or export products as Shopify CSV.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section 3: Common Workflows -->
+                <div id="manual-sec-3" class="tactile-card bg-white dark:bg-[#1E293B] p-6 sm:p-7 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-4">
+                  <div class="flex items-center gap-3 border-b border-[#E5E7EB] dark:border-slate-800 pb-3">
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 font-bold flex items-center justify-center text-xs">3</span>
+                    <h3 class="text-base font-bold text-[#0F172A] dark:text-white">Common Workflows</h3>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <h4 class="font-bold text-xs text-[#0F172A] dark:text-white mb-2">Workflow A: 15-Minute Nordic Launch</h4>
+                      <p class="text-[11px] text-[#64748B] dark:text-slate-400 leading-relaxed">
+                        Find a viral TikTok product → Paste link into Scraper → Verify 60%+ margin → Click Import to Store → Select AuraLum theme → Click "Export Standalone Bundle" → Upload to Cloudflare Pages or Loopia.
+                      </p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <h4 class="font-bold text-xs text-[#0F172A] dark:text-white mb-2">Workflow B: Margin & ROAS Audit</h4>
+                      <p class="text-[11px] text-[#64748B] dark:text-slate-400 leading-relaxed">
+                        Open Operations → Input 140 SEK supplier cost and 449 SEK retail → Observe 89.80 SEK MOMS liability and 219.20 SEK net profit → Note Breakeven ROAS of 1.95x. Set ad campaign bid caps accordingly.
+                      </p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#F8F9FA] dark:bg-slate-900/50 border border-[#E5E7EB] dark:border-slate-800">
+                      <h4 class="font-bold text-xs text-[#0F172A] dark:text-white mb-2">Workflow C: Shopify CSV Export</h4>
+                      <p class="text-[11px] text-[#64748B] dark:text-slate-400 leading-relaxed">
+                        Compile scraped products in your catalog → Go to Store Builder → Click "Export Products to CSV" → Open Shopify Admin → Go to Products → Import → Upload file for immediate multi-variant setup.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section 4: Rules of Thumb -->
+                <div id="manual-sec-4" class="tactile-card bg-white dark:bg-[#1E293B] p-6 sm:p-7 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-4">
+                  <div class="flex items-center gap-3 border-b border-[#E5E7EB] dark:border-slate-800 pb-3">
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 font-bold flex items-center justify-center text-xs">4</span>
+                    <h3 class="text-base font-bold text-[#0F172A] dark:text-white">Best Practices & Operational Rules of Thumb</h3>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <span class="font-bold text-[#2563EB] dark:text-blue-400 block mb-1">The 60%+ Gross Margin Rule</span>
+                      <p class="text-[#64748B] dark:text-slate-400">
+                        In European markets, blended Customer Acquisition Cost (CAC) typically ranges between 100–180 SEK. If your gross margin is below 60%, ad spend and 25% MOMS will render your business unprofitable. Aim for a minimum 3x markup over supplier DDP cost.
+                      </p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <span class="font-bold text-[#2563EB] dark:text-blue-400 block mb-1">PostNord Delivery Transparency</span>
+                      <p class="text-[#64748B] dark:text-slate-400">
+                        Always provide honest delivery estimates (e.g., "5–9 vardagar med PostNord Spårbart Paket"). Setting false 24h delivery claims for international goods leads to Klarna disputes and payment holds.
+                      </p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <span class="font-bold text-[#2563EB] dark:text-blue-400 block mb-1">Swish Placement Psychology</span>
+                      <p class="text-[#64748B] dark:text-slate-400">
+                        Place the Swish logo immediately beneath the primary Add-to-Cart or Buy Now button. Swedish consumers make snap purchasing decisions when they recognize familiar domestic payment rails.
+                      </p>
+                    </div>
+                    <div class="p-3.5 rounded-xl border border-[#E5E7EB] dark:border-slate-800 bg-[#F8F9FA] dark:bg-slate-900/50">
+                      <span class="font-bold text-[#2563EB] dark:text-blue-400 block mb-1">Mandatory 14-Day Return Rights</span>
+                      <p class="text-[#64748B] dark:text-slate-400">
+                        Never omit the 14-day ångerrätt policy. Under Swedish consumer law (Konsumentverket), failing to inform buyers of their right of withdrawal extends their legal return window to one full year.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section 5: Expert CLI -->
+                <div id="manual-sec-5" class="tactile-card bg-white dark:bg-[#1E293B] p-6 sm:p-7 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs space-y-4">
+                  <div class="flex items-center gap-3 border-b border-[#E5E7EB] dark:border-slate-800 pb-3">
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 font-bold flex items-center justify-center text-xs">5</span>
+                    <h3 class="text-base font-bold text-[#0F172A] dark:text-white">Expert CLI & Power User Commands</h3>
+                  </div>
+                  <p class="text-[#475569] dark:text-slate-300">
+                    Switch to <strong>Expert CLI</strong> in the header to activate the keyboard-driven terminal bar. Press <kbd class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-xs border border-slate-300 dark:border-slate-700">Cmd+K</kbd> or <kbd class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-xs border border-slate-300 dark:border-slate-700">Ctrl+K</kbd> to focus the command line.
+                  </p>
+                  
+                  <div class="bg-[#0F172A] text-emerald-400 font-mono text-xs p-4 rounded-xl border border-slate-800 space-y-2">
+                    <div><span class="text-[#2563EB] font-bold">/scrape &lt;url&gt;</span> - Ingest supplier URL, calculate 25% MOMS margin, and append to queue</div>
+                    <div><span class="text-[#2563EB] font-bold">/export</span> - Instantly build and trigger download of standalone single-file HTML store</div>
+                    <div><span class="text-[#2563EB] font-bold">/moms &lt;price&gt;</span> - Calculate exact Swedish 25% MOMS breakdown and net revenue</div>
+                    <div><span class="text-[#2563EB] font-bold">/roas &lt;cost&gt;</span> - Calculate breakeven ROAS against active product catalog</div>
+                    <div><span class="text-[#2563EB] font-bold">/ai &lt;prompt&gt;</span> - Dispatch prompt to active contextual specialist</div>
+                  </div>
+                </div>
+
+              </div>
+            ` : ''}
+
+            <!-- TAB 3: FAQ ACCORDION -->
+            ${subTab === 'faq' ? `
+              <div class="space-y-5 fade-in">
+                <!-- Category Filter Buttons -->
+                <div class="tactile-card bg-white dark:bg-[#1E293B] p-4 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs flex items-center gap-2 overflow-x-auto scrollbar-none">
+                  <button data-faq-category="all" class="touch-target px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === 'all' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-slate-300 hover:text-[#0F172A]' }">
+                    All Questions (${faqData.length})
+                  </button>
+                  <button data-faq-category="getting_started" class="touch-target px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === 'getting_started' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-slate-300 hover:text-[#0F172A]' }">
+                    Getting Started
+                  </button>
+                  <button data-faq-category="swedish_tax" class="touch-target px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === 'swedish_tax' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-slate-300 hover:text-[#0F172A]' }">
+                    Swedish Tax & Legal
+                  </button>
+                  <button data-faq-category="payments_shipping" class="touch-target px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === 'payments_shipping' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-slate-300 hover:text-[#0F172A]' }">
+                    Payments & Shipping
+                  </button>
+                  <button data-faq-category="store_export" class="touch-target px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === 'store_export' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-slate-300 hover:text-[#0F172A]' }">
+                    Storefronts & Export
+                  </button>
+                  <button data-faq-category="ai_byok" class="touch-target px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${activeCategory === 'ai_byok' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-[#64748B] dark:text-slate-300 hover:text-[#0F172A]' }">
+                    AI & BYOK Security
+                  </button>
+                </div>
+
+                <!-- FAQ Accordion Items -->
+                <div class="space-y-3">
+                  ${filteredFaqs.map((faq, idx) => {
+                    const originalIndex = faqData.indexOf(faq);
+                    const isExpanded = expandedFaqs.includes(originalIndex);
+                    return `
+                      <div class="tactile-card bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs overflow-hidden transition-all">
+                        <button data-faq-toggle="${originalIndex}" class="touch-target w-full text-left p-4 sm:p-5 flex items-start justify-between gap-4 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                          <div class="flex items-start gap-3">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-[#2563EB] dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shrink-0 mt-0.5">
+                              ${faq.categoryLabel}
+                            </span>
+                            <h4 class="font-bold text-xs sm:text-sm text-[#0F172A] dark:text-white leading-snug">
+                              ${faq.q}
+                            </h4>
+                          </div>
+                          <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180 text-[#2563EB]' : ''}">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                          </div>
+                        </button>
+                        
+                        ${isExpanded ? `
+                          <div class="px-5 pb-5 pt-1 text-xs text-[#475569] dark:text-slate-300 border-t border-[#E5E7EB]/60 dark:border-slate-800/60 leading-relaxed bg-[#F8F9FA]/40 dark:bg-slate-900/20 fade-in">
+                            <p class="pt-3">${faq.a}</p>
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+
+                <!-- Footer Help Note -->
+                <div class="tactile-card bg-blue-50/50 dark:bg-blue-950/30 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/40 flex items-center justify-between flex-wrap gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-[#2563EB] dark:text-blue-300 flex items-center justify-center shrink-0">
+                      <i data-lucide="help-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h5 class="font-bold text-xs text-[#0F172A] dark:text-white">Still have questions?</h5>
+                      <p class="text-[11px] text-[#64748B] dark:text-slate-400">Ask the contextual AI agent in the bottom right corner for immediate personalized assistance.</p>
+                    </div>
+                  </div>
+                  <button id="btn-toggle-ai-faq" class="touch-target px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs active:scale-95 transition shadow-xs flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>Ask AI Assistant</span>
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+
           </div>
         `;
       }
@@ -1572,6 +2306,134 @@
           });
 
           alert('BYOK Settings saved securely in localStorage!');
+        });
+
+        // Onboarding Stepper Modal Controls
+        document.getElementById('btn-open-tour')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.onboardingModalOpen = true;
+          });
+        });
+
+        document.getElementById('btn-close-onboarding')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.onboardingModalOpen = false;
+            s.userProfile.onboardingCompleted = true;
+          });
+        });
+
+        document.getElementById('btn-tour-skip')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.onboardingModalOpen = false;
+            s.userProfile.onboardingCompleted = true;
+          });
+        });
+
+        document.getElementById('btn-tour-prev')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            if (s.uiState.onboardingStep > 0) s.uiState.onboardingStep -= 1;
+          });
+        });
+
+        document.getElementById('btn-tour-next')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            if (s.uiState.onboardingStep < 4) s.uiState.onboardingStep += 1;
+          });
+        });
+
+        document.getElementById('btn-tour-finish')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.onboardingModalOpen = false;
+            s.userProfile.onboardingCompleted = true;
+          });
+        });
+
+        document.querySelectorAll('[data-tour-step]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const st = parseInt(e.currentTarget.getAttribute('data-tour-step'), 10);
+            if (!isNaN(st)) {
+              this.engine.update(s => {
+                s.uiState.onboardingStep = st;
+              });
+            }
+          });
+        });
+
+        // Settings Tour Controls
+        document.getElementById('btn-replay-tour')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.onboardingStep = 0;
+            s.uiState.onboardingModalOpen = true;
+          });
+        });
+
+        document.getElementById('btn-reset-tour')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.userProfile.onboardingCompleted = false;
+            s.uiState.onboardingStep = 0;
+          });
+          alert('Tour completion status has been reset. It will launch on reload or you can click "Replay" anytime!');
+        });
+
+        document.getElementById('btn-open-manual')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.activeTab = 'about';
+            s.uiState.aboutSubTab = 'manual';
+          });
+        });
+
+        // About View Sub-Tabs & Actions
+        document.querySelectorAll('[data-about-subtab]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const tab = e.currentTarget.getAttribute('data-about-subtab');
+            this.engine.update(s => {
+              s.uiState.aboutSubTab = tab;
+            });
+          });
+        });
+
+        document.getElementById('btn-about-launch-tour')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.onboardingStep = 0;
+            s.uiState.onboardingModalOpen = true;
+          });
+        });
+
+        document.getElementById('btn-about-open-manual')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.aboutSubTab = 'manual';
+          });
+        });
+
+        // FAQ Category filter & accordion toggles
+        document.querySelectorAll('[data-faq-category]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const cat = e.currentTarget.getAttribute('data-faq-category');
+            this.engine.update(s => {
+              s.uiState.activeFaqCategory = cat;
+            });
+          });
+        });
+
+        document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.currentTarget.getAttribute('data-faq-toggle'), 10);
+            this.engine.update(s => {
+              if (!s.uiState.expandedFaqs) s.uiState.expandedFaqs = [];
+              const pos = s.uiState.expandedFaqs.indexOf(idx);
+              if (pos > -1) {
+                s.uiState.expandedFaqs.splice(pos, 1);
+              } else {
+                s.uiState.expandedFaqs.push(idx);
+              }
+            });
+          });
+        });
+
+        document.getElementById('btn-toggle-ai-faq')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.aiDrawerOpen = true;
+          });
         });
 
         // CLI input
