@@ -1,5 +1,5 @@
 {
-  "name": "HustlePipe",
+  "name": "SideHustle",
   "description": "A Scandinavian minimalist mobile-first dropshipping and e-commerce pipeline with modular scrapers, visual store composer, contextual BYOK AI engine, and European localization.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

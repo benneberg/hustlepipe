@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HustlePipe</title>
+  <title>SideHustle</title>
   <meta name="description" content="A Scandinavian minimalist mobile-first dropshipping and e-commerce pipeline with modular scrapers, visual store composer, contextual BYOK AI engine, and European localization." />
-  <meta property="og:title" content="HustlePipe" />
+  <meta property="og:title" content="SideHustle" />
   <meta property="og:description" content="A Scandinavian minimalist mobile-first dropshipping and e-commerce pipeline with modular scrapers, visual store composer, contextual BYOK AI engine, and European localization." />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,6 +84,28 @@
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    @keyframes bounceX {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(5px); }
+    }
+    .animate-bounce-x {
+      animation: bounceX 1.3s ease-in-out infinite;
+    }
+    @keyframes slideInLeft {
+      from { transform: translateX(-100%); opacity: 0.7; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .slide-in-left {
+      animation: slideInLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .liquid-glass {
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(255, 255, 255, 0.85);
+    }
+    .dark .liquid-glass {
+      background: rgba(15, 23, 42, 0.88);
+    }
   </style>
 </head>
 <body class="bg-[#F8F9FA] dark:bg-[#0F172A] text-[#0F172A] dark:text-[#F8FAFC] min-h-screen font-sans antialiased selection:bg-[#2563EB] selection:text-white pb-24 md:pb-8">
@@ -92,14 +114,14 @@
   <!-- Central Single File SPA Module -->
   <script type="module">
     /**
-     * SideForge / HustlePipe Engine Architecture v2.0
+     * SideHustle Engine Architecture v2.0
      * StateEngine, PubSub, Modular Services & Reactive Views
      */
 
     // --- StateEngine Singleton ---
     class StateEngine {
       constructor() {
-        this.STORAGE_KEY = 'hustlepipe_state_v2';
+        this.STORAGE_KEY = 'sidehustle_state_v2';
         this.events = {};
         this.state = this.loadState();
       }
@@ -211,6 +233,8 @@
           uiState: {
             activeTab: 'pipeline', // pipeline, scraper, composer, operations, marketing, compliance, settings, about
             theme: 'light',
+            sideMenuOpen: false,
+            userProfileModalOpen: false,
             aiDrawerOpen: false,
             aiChatHistory: [],
             selectedProductCard: 'prod_1',
@@ -227,13 +251,15 @@
 
       loadState() {
         try {
-          const raw = localStorage.getItem(this.STORAGE_KEY);
+          const raw = localStorage.getItem(this.STORAGE_KEY) || localStorage.getItem('hustlepipe_state_v2');
           if (raw) {
             const parsed = JSON.parse(raw);
             const def = this.getDefaultState();
             const merged = { ...def, ...parsed };
             merged.userProfile = { ...def.userProfile, ...(parsed.userProfile || {}) };
             merged.uiState = { ...def.uiState, ...(parsed.uiState || {}) };
+            merged.uiState.sideMenuOpen = false;
+            merged.uiState.userProfileModalOpen = false;
             // If onboarding not completed, open modal for first-time onboarding
             if (!merged.userProfile.onboardingCompleted) {
               merged.uiState.onboardingModalOpen = true;
@@ -500,12 +526,12 @@
       static async fetchAvailableModels(provider, apiKey) {
         if (provider === 'groq') {
           if (!apiKey) {
-            throw new Error('A Groq API key is required to query Groq\'s live model catalog.');
+            throw new Error('A Groq API key is required to query Groq\'s live model catalog (https://api.groq.com/openai/v1/models).');
           }
           // Groq documented endpoint: GET https://api.groq.com/openai/v1/models
           const res = await fetch('https://api.groq.com/openai/v1/models', {
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
+              'Authorization': `Bearer ${apiKey.trim()}`,
               'Content-Type': 'application/json'
             }
           });
@@ -514,13 +540,14 @@
             throw new Error(err.error?.message || `Groq API returned HTTP ${res.status}`);
           }
           const data = await res.json();
+          // Return all active hosted text models, filtering out audio transcription whisper models
           const models = (data.data || [])
-            .filter(m => m.active !== false && !m.id.includes('whisper') && !m.id.includes('guard'))
+            .filter(m => m.active !== false && !m.id.toLowerCase().includes('whisper'))
             .map(m => ({
               id: m.id,
               name: m.id,
-              badge: `${m.owned_by || 'Groq'} • Free Rate Limits`,
-              speed: m.context_window ? `${Math.round(m.context_window / 1024)}k ctx` : 'Fast'
+              badge: `${m.owned_by || 'Hosted'} • ${m.context_window ? Math.round(m.context_window / 1024) + 'k ctx' : 'Fast'}`,
+              speed: 'Fast Inference'
             }));
           return models.length > 0 ? models : FREE_MODELS.groq;
         } else {
@@ -743,56 +770,67 @@
         }
       }
 
+      getTabList() {
+        return [
+          { id: 'pipeline', label: 'Pipeline', desc: 'Linear roadmap to launch', icon: 'check-circle-2', rookie: true },
+          { id: 'scraper', label: 'Scraper', desc: 'Margin & product scout', icon: 'search', rookie: true },
+          { id: 'composer', label: 'Store Builder', desc: 'Drag-and-drop Nordic shop', icon: 'layout-template', rookie: true },
+          { id: 'operations', label: 'Calculators & Orders', desc: '25% MOMS & Breakeven ROAS', icon: 'calculator', rookie: false },
+          { id: 'marketing', label: 'Marketing Hooks', desc: 'Swedish viral TikTok scripts', icon: 'flame', rookie: false },
+          { id: 'compliance', label: 'Swedish/EU Tax', desc: 'Skatteverket & ångerrätt', icon: 'shield-check', rookie: false },
+          { id: 'settings', label: 'BYOK & Settings', desc: 'IndexedDB Vault & Groq Models', icon: 'settings', rookie: true },
+          { id: 'about', label: 'About & Manual', desc: 'Complete manual & Nordic FAQ', icon: 'book-open', rookie: true }
+        ];
+      }
+
       render() {
         const { state } = this.engine;
         const { experienceLevel } = state.userProfile;
         const activeStore = this.engine.getActiveStore();
 
         this.appEl.innerHTML = `
-          <!-- Header (Clean Minimalism) -->
-          <header class="bg-white dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-slate-800 rounded-2xl px-5 sm:px-6 py-4 mb-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <div class="w-11 h-11 bg-[#2563EB] rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
-                <i data-lucide="zap" class="w-6 h-6"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h1 class="text-xl font-bold tracking-tight text-[#0F172A] dark:text-white">SideForge Dashboard</h1>
-                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-[#2563EB] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40">HustlePipe</span>
+          <!-- Header (Clean Minimalism - Single Title: SideHustle) -->
+          <header class="bg-white/95 dark:bg-[#1E293B]/95 backdrop-blur-md border border-[#E5E7EB] dark:border-slate-800 rounded-2xl px-4 sm:px-6 py-3.5 sm:py-4 mb-6 shadow-xs flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 sm:gap-4">
+              <!-- Traditional Menu Toggle Button -->
+              <button id="btn-toggle-menu" class="touch-target p-2 sm:p-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-[#0F172A] dark:text-white transition active:scale-95 shadow-xs flex items-center justify-center cursor-pointer" title="Open Navigation Menu" aria-label="Open Navigation Menu">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+              </button>
+
+              <!-- Single Title in Head: SideHustle -->
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 bg-[#2563EB] rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                  <i data-lucide="zap" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                 </div>
-                <p class="text-xs text-[#64748B] dark:text-slate-400 uppercase tracking-widest font-semibold mt-0.5">
-                  Experience Level: <span class="text-[#2563EB] dark:text-blue-400 font-bold capitalize">${experienceLevel}</span>
-                </p>
+                <div>
+                  <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0F172A] dark:text-white leading-none">SideHustle</h1>
+                  <span class="text-[10px] text-[#64748B] dark:text-slate-400 font-semibold tracking-wide hidden sm:inline">Nordic DTC Operations Engine</span>
+                </div>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-              <!-- Interactive Tour Trigger -->
-              <button id="btn-open-onboarding" class="touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs transition bg-blue-50 text-[#2563EB] hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/50 shadow-xs" title="Launch Interactive Guided Onboarding Tour">
-                <i data-lucide="compass" class="w-3.5 h-3.5"></i>
-                <span>Tour</span>
-              </button>
-
-              <!-- Experience Level Switcher -->
-              <div class="flex bg-[#F1F5F9] dark:bg-slate-800 p-1 rounded-xl border border-[#E5E7EB] dark:border-slate-700 text-xs">
-                <button id="btn-lvl-rookie" class="px-3 py-1.5 rounded-lg font-semibold transition ${experienceLevel === 'rookie' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A]'}">Rookie</button>
-                <button id="btn-lvl-inter" class="px-3 py-1.5 rounded-lg font-semibold transition ${experienceLevel === 'intermediate' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A]'}">Standard</button>
-                <button id="btn-lvl-expert" class="px-3 py-1.5 rounded-lg font-semibold transition ${experienceLevel === 'expert' ? 'bg-white dark:bg-slate-700 text-[#2563EB] dark:text-blue-400 shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A]'}">Expert</button>
-              </div>
-
+            <!-- Right Controls: Light/Dark Toggle + User Profile Settings Icon -->
+            <div class="flex items-center gap-2 sm:gap-3">
               <!-- Segmented Light/Dark Toggle -->
               <div class="flex bg-[#F1F5F9] dark:bg-slate-800 p-1 rounded-xl border border-[#E5E7EB] dark:border-slate-700 text-xs">
-                <button id="btn-theme-light" class="px-3.5 py-1.5 rounded-lg font-medium transition ${state.uiState.theme !== 'dark' ? 'bg-white shadow-xs text-[#0F172A] font-semibold' : 'text-[#64748B] dark:text-slate-400'}">Light</button>
-                <button id="btn-theme-dark" class="px-3.5 py-1.5 rounded-lg font-medium transition ${state.uiState.theme === 'dark' ? 'bg-slate-700 shadow-xs text-white font-semibold' : 'text-[#64748B] dark:text-slate-400'}">Dark</button>
+                <button id="btn-theme-light" class="touch-target px-2.5 sm:px-3 py-1 rounded-lg font-medium transition cursor-pointer ${state.uiState.theme !== 'dark' ? 'bg-white shadow-xs text-[#0F172A] font-semibold' : 'text-[#64748B] dark:text-slate-400'}" title="Light Mode">
+                  <span class="hidden sm:inline">Light</span>
+                  <i data-lucide="sun" class="w-3.5 h-3.5 sm:hidden inline"></i>
+                </button>
+                <button id="btn-theme-dark" class="touch-target px-2.5 sm:px-3 py-1 rounded-lg font-medium transition cursor-pointer ${state.uiState.theme === 'dark' ? 'bg-slate-700 shadow-xs text-white font-semibold' : 'text-[#64748B] dark:text-slate-400'}" title="Dark Mode">
+                  <span class="hidden sm:inline">Dark</span>
+                  <i data-lucide="moon" class="w-3.5 h-3.5 sm:hidden inline"></i>
+                </button>
               </div>
 
-              <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-
-              <!-- BYOK Active Status Pill -->
-              <div class="flex items-center gap-2 ${state.userProfile.aiSettings.apiKey ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800/60' : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'} px-3.5 py-1.5 rounded-full text-xs font-bold border shadow-xs">
-                <span class="w-2 h-2 ${state.userProfile.aiSettings.apiKey ? 'bg-green-500 animate-pulse' : 'bg-slate-400'} rounded-full"></span>
-                <span>BYOK ${state.userProfile.aiSettings.apiKey ? 'Active' : 'Offline'}</span>
-              </div>
+              <!-- User Profile & Preferences Toggle Icon -->
+              <button id="btn-toggle-user-profile" class="touch-target relative p-2 sm:p-2.5 rounded-xl border border-[#E5E7EB] dark:border-slate-700 bg-[#F8F9FA] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-[#0F172A] dark:text-white transition-all active:scale-95 shadow-xs flex items-center justify-center cursor-pointer" title="User Profile, Preferences & Experience Level">
+                <i data-lucide="user" class="w-5 h-5"></i>
+                <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-[#2563EB]"></span>
+                </span>
+              </button>
             </div>
           </header>
 
@@ -805,15 +843,27 @@
             </div>
           ` : ''}
 
-          <!-- Navigation Tabs (Clean Minimalism) -->
-          <nav class="flex overflow-x-auto scrollbar-none gap-2 p-1.5 bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E5E7EB] dark:border-slate-800 mb-6 shadow-xs">
-            ${this.renderNavTabs(experienceLevel, state.uiState.activeTab)}
-          </nav>
+          <!-- Navigation Tabs (With Subtle Swipe Indicator) -->
+          <div class="relative mb-6">
+            <nav class="flex overflow-x-auto scrollbar-none gap-2 p-1.5 bg-white dark:bg-[#1E293B] rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs">
+              ${this.renderNavTabs(experienceLevel, state.uiState.activeTab)}
+            </nav>
+            <div class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] font-bold text-[#2563EB] dark:text-blue-400 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-xs border border-blue-100 dark:border-slate-700 select-none md:hidden">
+              <span>Swipe</span>
+              <span class="inline-block animate-bounce-x">👉</span>
+            </div>
+          </div>
 
           <!-- Active View Content Container -->
           <main id="main-view" class="fade-in">
             ${this.renderActiveView(state.uiState.activeTab, state)}
           </main>
+
+          <!-- Liquid Glass Slide-In Side Panel -->
+          ${state.uiState.sideMenuOpen ? this.renderLiquidGlassSideMenu(state) : ''}
+
+          <!-- User Profile & Preferences Modal -->
+          ${state.uiState.userProfileModalOpen ? this.renderUserProfileModal(state) : ''}
 
           <!-- Interactive Onboarding Stepper Modal -->
           ${state.uiState.onboardingModalOpen ? this.renderOnboardingModal(state) : ''}
@@ -828,24 +878,205 @@
         this.bindEvents();
       }
 
+      renderLiquidGlassSideMenu(state) {
+        const { experienceLevel } = state.userProfile;
+        const activeTab = state.uiState.activeTab;
+        const tabs = this.getTabList();
+
+        return `
+          <div id="side-menu-overlay" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity fade-in flex cursor-pointer">
+            <div id="side-menu-panel" class="w-full max-w-[320px] sm:max-w-sm h-full liquid-glass dark:bg-[#0F172A]/90 backdrop-blur-2xl border-r border-white/60 dark:border-slate-800/80 shadow-2xl flex flex-col p-5 overflow-y-auto space-y-5 slide-in-left relative cursor-default" onclick="event.stopPropagation()">
+              
+              <!-- Top Glass Header -->
+              <div class="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-slate-800/80">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 bg-[#2563EB] rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h2 class="font-extrabold text-base text-[#0F172A] dark:text-white leading-none">SideHustle</h2>
+                    <span class="text-[10px] font-semibold text-[#2563EB] dark:text-blue-400 uppercase tracking-wider">Nordic DTC Engine</span>
+                  </div>
+                </div>
+                <button id="btn-close-side-menu" class="touch-target p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white transition cursor-pointer" title="Close Menu">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+              </div>
+
+              <!-- Onboarding Guided Tour Button (Moved here and verified functional!) -->
+              <div class="p-1 rounded-2xl bg-linear-to-br from-blue-500/10 via-indigo-500/10 to-blue-600/20 border border-blue-500/20 shadow-xs">
+                <button id="btn-side-menu-tour" class="touch-target w-full flex items-center justify-between p-3.5 rounded-xl bg-linear-to-r from-[#2563EB] to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs active:scale-98 transition shadow-xs cursor-pointer group">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
+                      <i data-lucide="compass" class="w-4 h-4"></i>
+                    </div>
+                    <div class="text-left">
+                      <div class="font-bold text-xs">Guided Stepper Tour</div>
+                      <div class="text-[10px] text-blue-100 font-normal">Interactive 5-step roadmap</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-white/25 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">5 Steps</span>
+                </button>
+              </div>
+
+              <!-- Navigation Menu List -->
+              <div class="space-y-1">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-2">Workspace Modules</div>
+                ${tabs.map(t => {
+                  const isActive = activeTab === t.id;
+                  return `
+                    <button data-side-tab="${t.id}" class="touch-target w-full flex items-center justify-between p-2.5 rounded-xl transition text-left cursor-pointer ${
+                      isActive 
+                        ? 'bg-[#2563EB] text-white shadow-xs font-bold' 
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 font-medium'
+                    }">
+                      <div class="flex items-center gap-2.5">
+                        <i data-lucide="${t.icon}" class="w-4 h-4 ${isActive ? 'text-white' : 'text-[#2563EB] dark:text-blue-400'}"></i>
+                        <div>
+                          <div class="text-xs leading-tight">${t.label}</div>
+                          <div class="text-[10px] ${isActive ? 'text-blue-100' : 'text-slate-400 dark:text-slate-500'} font-normal">${t.desc}</div>
+                        </div>
+                      </div>
+                      ${isActive ? '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>' : ''}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+
+              <!-- Quick Operations & Actions -->
+              <div class="space-y-1 pt-2 border-t border-slate-200/60 dark:border-slate-800/80">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2">Quick Actions</div>
+                <button id="btn-side-menu-preview" class="touch-target w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer">
+                  <i data-lucide="eye" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+                  <span>Live Storefront Preview</span>
+                </button>
+                <button id="btn-side-menu-ai" class="touch-target w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                  <span>Ask AI Specialist</span>
+                </button>
+                <button id="btn-side-menu-profile" class="touch-target w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer">
+                  <i data-lucide="user-cog" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                  <span>Operator Profile & Preferences</span>
+                </button>
+              </div>
+
+              <!-- Experience Level Switcher in Panel -->
+              <div class="p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-slate-200/60 dark:border-slate-800/80 space-y-2">
+                <div class="flex items-center justify-between text-[11px] font-semibold">
+                  <span class="text-slate-500 dark:text-slate-400">Experience Mode:</span>
+                  <span class="text-[#2563EB] dark:text-blue-400 font-bold capitalize">${experienceLevel}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1 text-[11px]">
+                  <button data-set-level="rookie" class="py-1.5 rounded-lg font-semibold text-center transition cursor-pointer ${experienceLevel === 'rookie' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-black'}">Rookie</button>
+                  <button data-set-level="intermediate" class="py-1.5 rounded-lg font-semibold text-center transition cursor-pointer ${experienceLevel === 'intermediate' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-black'}">Standard</button>
+                  <button data-set-level="expert" class="py-1.5 rounded-lg font-semibold text-center transition cursor-pointer ${experienceLevel === 'expert' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 hover:text-black'}">Expert</button>
+                </div>
+              </div>
+
+              <!-- Nordic Trust Footer -->
+              <div class="mt-auto pt-3 border-t border-slate-200/60 dark:border-slate-800/80 text-[11px] text-slate-400 dark:text-slate-500 space-y-0.5">
+                <div class="flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+                  <span>🇸🇪</span> <span>Sweden & Nordic E-Commerce</span>
+                </div>
+                <p class="text-[10px]">25% MOMS • Swish & Klarna • Skatteverket</p>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+
+      renderUserProfileModal(state) {
+        const { experienceLevel } = state.userProfile;
+
+        return `
+          <div id="user-profile-overlay" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity fade-in flex items-center justify-center p-4 cursor-pointer">
+            <div class="bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur-2xl w-full max-w-md rounded-3xl border border-[#E5E7EB] dark:border-slate-800 shadow-2xl p-6 space-y-5 fade-in cursor-default" onclick="event.stopPropagation()">
+              
+              <!-- Header -->
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#2563EB] dark:text-blue-400">
+                    <i data-lucide="user-cog" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-extrabold text-base text-[#0F172A] dark:text-white">Operator Profile & Preferences</h3>
+                    <p class="text-xs text-slate-400">Workspace settings and regional defaults</p>
+                  </div>
+                </div>
+                <button id="btn-close-user-profile" class="touch-target p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer" title="Close">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+              </div>
+
+              <!-- Experience Level Selector -->
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Experience Level</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button data-profile-level="rookie" class="touch-target p-3 rounded-xl border text-center transition cursor-pointer ${experienceLevel === 'rookie' ? 'border-[#2563EB] bg-blue-50/80 dark:bg-blue-950/50 text-[#2563EB] font-bold shadow-xs' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400'}">
+                    <div class="text-xs font-bold">Rookie</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">Guided steps</div>
+                  </button>
+                  <button data-profile-level="intermediate" class="touch-target p-3 rounded-xl border text-center transition cursor-pointer ${experienceLevel === 'intermediate' ? 'border-[#2563EB] bg-blue-50/80 dark:bg-blue-950/50 text-[#2563EB] font-bold shadow-xs' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400'}">
+                    <div class="text-xs font-bold">Standard</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">Full access</div>
+                  </button>
+                  <button data-profile-level="expert" class="touch-target p-3 rounded-xl border text-center transition cursor-pointer ${experienceLevel === 'expert' ? 'border-[#2563EB] bg-blue-50/80 dark:bg-blue-950/50 text-[#2563EB] font-bold shadow-xs' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400'}">
+                    <div class="text-xs font-bold">Expert CLI</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">Cmd+K terminal</div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nordic Defaults & Security Status -->
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 dark:text-slate-400">Target Market:</span>
+                  <span class="font-bold text-[#0F172A] dark:text-white flex items-center gap-1.5"><span>🇸🇪</span> Sweden (Sverige)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 dark:text-slate-400">Operating Currency:</span>
+                  <span class="font-bold text-[#0F172A] dark:text-white">SEK (Swedish Krona)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 dark:text-slate-400">Statutory Tax:</span>
+                  <span class="font-bold text-[#0F172A] dark:text-white">25% MOMS (Inclusive)</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500 dark:text-slate-400">Encrypted Vault Status:</span>
+                  <span class="font-bold ${this.vaultKeyHint ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} flex items-center gap-1">
+                    <i data-lucide="${this.vaultKeyHint ? 'shield-check' : 'shield'}" class="w-3.5 h-3.5"></i>
+                    ${this.vaultKeyHint ? 'Key Stored in IndexedDB' : 'No Key Stored'}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Actions: Guided Tour + Key Vault -->
+              <div class="flex items-center gap-2 pt-1">
+                <button id="btn-profile-launch-tour" class="touch-target flex-1 py-2.5 px-4 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition shadow-xs cursor-pointer">
+                  <i data-lucide="compass" class="w-4 h-4"></i>
+                  <span>Launch Guided Tour</span>
+                </button>
+                <button id="btn-profile-open-vault" class="touch-target py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                  <i data-lucide="key" class="w-4 h-4"></i>
+                  <span>BYOK Vault</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+
       renderNavTabs(level, activeTab) {
-        const tabs = [
-          { id: 'pipeline', label: 'Pipeline', icon: 'check-circle-2', rookie: true },
-          { id: 'scraper', label: 'Scraper', icon: 'search', rookie: true },
-          { id: 'composer', label: 'Store Builder', icon: 'layout-template', rookie: true },
-          { id: 'operations', label: 'Calculators & Orders', icon: 'calculator', rookie: false },
-          { id: 'marketing', label: 'Marketing Hooks', icon: 'flame', rookie: false },
-          { id: 'compliance', label: 'Swedish/EU Tax', icon: 'shield-check', rookie: false },
-          { id: 'settings', label: 'BYOK & Settings', icon: 'settings', rookie: true },
-          { id: 'about', label: 'About & Manual', icon: 'book-open', rookie: true }
-        ];
+        const tabs = this.getTabList();
 
         return tabs
           .filter(t => level !== 'rookie' || t.rookie)
           .map(t => {
             const isActive = activeTab === t.id;
             return `
-              <button data-tab="${t.id}" class="tab-btn touch-target flex-1 min-w-[110px] flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl font-semibold text-xs sm:text-sm transition-all whitespace-nowrap active:scale-95 ${
+              <button data-tab="${t.id}" class="tab-btn touch-target flex-1 min-w-[110px] flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl font-semibold text-xs sm:text-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
                 isActive
                   ? 'bg-[#2563EB] text-white shadow-xs'
                   : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/80'
@@ -896,36 +1127,42 @@
                 </div>
               </div>
 
-              <!-- Horizontal Interactive Stepper -->
-              <div class="relative py-2 my-2 overflow-x-auto scrollbar-none">
-                <div class="flex justify-between items-center min-w-[500px] relative px-4">
-                  <!-- Background Track -->
-                  <div class="absolute top-5 left-8 right-8 h-[2px] bg-slate-100 dark:bg-slate-700/80 -z-0"></div>
-                  <!-- Active Progress Fill -->
-                  <div class="absolute top-5 left-8 h-[2px] bg-[#2563EB] -z-0 transition-all duration-500" style="width: calc(${Math.min(percent, 96)}% - 1rem)"></div>
+              <!-- Horizontal Interactive Stepper (With Swipe Cue) -->
+              <div class="relative">
+                <div class="relative py-2 my-2 overflow-x-auto scrollbar-none">
+                  <div class="flex justify-between items-center min-w-[500px] relative px-4">
+                    <!-- Background Track -->
+                    <div class="absolute top-5 left-8 right-8 h-[2px] bg-slate-100 dark:bg-slate-700/80 -z-0"></div>
+                    <!-- Active Progress Fill -->
+                    <div class="absolute top-5 left-8 h-[2px] bg-[#2563EB] -z-0 transition-all duration-500" style="width: calc(${Math.min(percent, 96)}% - 1rem)"></div>
 
-                  ${steps.map((step, idx) => {
-                    const isDone = step.done;
-                    const isCurrent = !isDone && (idx === 0 || steps[idx - 1]?.done);
-                    const label = stepLabels[idx] || `Step ${idx + 1}`;
+                    ${steps.map((step, idx) => {
+                      const isDone = step.done;
+                      const isCurrent = !isDone && (idx === 0 || steps[idx - 1]?.done);
+                      const label = stepLabels[idx] || `Step ${idx + 1}`;
 
-                    return `
-                      <div class="flex flex-col items-center gap-2 relative z-10 cursor-pointer group" data-step-toggle="${step.id}" title="Toggle ${step.title}">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                          isDone
-                            ? 'bg-[#2563EB] text-white shadow-xs'
-                            : isCurrent
-                              ? 'bg-white dark:bg-[#1E293B] border-4 border-[#2563EB] text-[#2563EB] font-bold'
-                              : 'bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 text-slate-400 font-bold opacity-60 group-hover:opacity-100'
-                        }">
-                          ${isDone ? '<i data-lucide="check" class="w-5 h-5"></i>' : (idx + 1)}
+                      return `
+                        <div class="flex flex-col items-center gap-2 relative z-10 cursor-pointer group" data-step-toggle="${step.id}" title="Toggle ${step.title}">
+                          <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                            isDone
+                              ? 'bg-[#2563EB] text-white shadow-xs'
+                              : isCurrent
+                                ? 'bg-white dark:bg-[#1E293B] border-4 border-[#2563EB] text-[#2563EB] font-bold'
+                                : 'bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 text-slate-400 font-bold opacity-60 group-hover:opacity-100'
+                          }">
+                            ${isDone ? '<i data-lucide="check" class="w-5 h-5"></i>' : (idx + 1)}
+                          </div>
+                          <span class="text-[10px] font-bold uppercase tracking-wider ${
+                            isDone || isCurrent ? 'text-[#2563EB] dark:text-blue-400' : 'text-[#64748B] dark:text-slate-500'
+                          }">${label}</span>
                         </div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider ${
-                          isDone || isCurrent ? 'text-[#2563EB] dark:text-blue-400' : 'text-[#64748B] dark:text-slate-500'
-                        }">${label}</span>
-                      </div>
-                    `;
-                  }).join('')}
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+                <div class="pointer-events-none absolute right-2 -bottom-1 flex items-center gap-1 text-[10px] font-bold text-[#2563EB] dark:text-blue-400 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xs px-2 py-0.5 rounded-full border border-blue-100 dark:border-slate-700 select-none sm:hidden">
+                  <span>Swipe roadmap</span>
+                  <span class="inline-block animate-bounce-x">👉</span>
                 </div>
               </div>
 
@@ -1795,11 +2032,11 @@
 
         const tourSteps = [
           {
-            badge: 'Welcome to HustlePipe',
+            badge: 'Welcome to SideHustle',
             title: 'Your Nordic DTC Operations Engine',
             icon: 'compass',
             color: 'blue',
-            desc: 'HustlePipe is a complete, mobile-first Scandinavian and European e-commerce automation workspace. Transition from raw supplier links to live, Skatteverket-compliant storefronts in minutes—without paying $150+/month for fragmented Shopify apps.',
+            desc: 'SideHustle is a complete, mobile-first Scandinavian and European e-commerce automation workspace. Transition from raw supplier links to live, Skatteverket-compliant storefronts in minutes—without paying $150+/month for fragmented Shopify apps.',
             takeaways: [
               { icon: 'zap', title: '15-Minute Pipeline', text: 'Linear roadmap from product discovery to ready-to-test Swedish store.' },
               { icon: 'shield-check', title: 'Skatteverket Ready', text: 'Pre-configured with Swedish 25% MOMS, 14-day ångerrätt, and PostNord.' },
@@ -1812,7 +2049,7 @@
             title: 'Automated Product Scraper & Margins',
             icon: 'search',
             color: 'emerald',
-            desc: 'Paste product URLs from AliExpress, CJ Dropshipping, or 1688. HustlePipe instantly parses supplier costs in SEK, estimates PostNord delivery freight, and checks if the item satisfies our strict 60%+ gross margin requirement.',
+            desc: 'Paste product URLs from AliExpress, CJ Dropshipping, or 1688. SideHustle instantly parses supplier costs in SEK, estimates PostNord delivery freight, and checks if the item satisfies our strict 60%+ gross margin requirement.',
             takeaways: [
               { icon: 'dollar-sign', title: 'Instant Currency Conversion', text: 'Supplier COGS automatically projected into Swedish Kronor (SEK).' },
               { icon: 'percent', title: '60%+ Gross Margin Rule', text: 'Guarantees healthy margins after ad acquisition costs and shipping.' },
@@ -1838,7 +2075,7 @@
             title: 'Skatteverket 25% MOMS & Breakeven ROAS',
             icon: 'calculator',
             color: 'amber',
-            desc: 'Swedish consumer protection law strictly requires retail prices to include 25% MOMS. HustlePipe automatically computes your net revenue (Price / 1.25), exact tax liability for Skatteverket, and breakeven advertising ROAS for TikTok and Meta.',
+            desc: 'Swedish consumer protection law strictly requires retail prices to include 25% MOMS. SideHustle automatically computes your net revenue (Price / 1.25), exact tax liability for Skatteverket, and breakeven advertising ROAS for TikTok and Meta.',
             takeaways: [
               { icon: 'receipt', title: 'Statutory 25% MOMS Math', text: 'Accurately separates net revenue from tax liabilities before ad spending.' },
               { icon: 'target', title: 'Breakeven ROAS Guardrail', text: 'Know your exact maximum CPA so you never run unprofitable ad campaigns.' },
@@ -1872,7 +2109,7 @@
                 <div class="flex items-center justify-between gap-3 mb-3 sm:mb-4">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#2563EB] animate-pulse"></span>
-                    <span class="text-xs font-bold text-[#2563EB] dark:text-blue-400 uppercase tracking-wider">HustlePipe Guided Tour</span>
+                    <span class="text-xs font-bold text-[#2563EB] dark:text-blue-400 uppercase tracking-wider">SideHustle Guided Tour</span>
                   </div>
                   <div class="flex items-center gap-3">
                     <span class="text-xs font-bold text-[#64748B] dark:text-slate-400">Step ${step + 1} of ${totalSteps}</span>
@@ -1981,14 +2218,14 @@
           {
             category: 'getting_started',
             categoryLabel: 'Getting Started',
-            q: 'What makes HustlePipe different from standard platforms like Shopify or WooCommerce?',
-            a: 'HustlePipe is designed specifically as an all-in-one Scandinavian DTC operations workspace with zero monthly app subscriptions. Traditional platforms require $39+/mo plus $150+/mo in recurring app fees for reviews, Swedish MOMS VAT formatting, upsells, and currency converters. HustlePipe runs 100% in your browser, integrates automated 25% Skatteverket tax calculations, and lets you export production-ready standalone HTML stores or Shopify-compatible CSV files anytime.'
+            q: 'What makes SideHustle different from standard platforms like Shopify or WooCommerce?',
+            a: 'SideHustle is designed specifically as an all-in-one Scandinavian DTC operations workspace with zero monthly app subscriptions. Traditional platforms require $39+/mo plus $150+/mo in recurring app fees for reviews, Swedish MOMS VAT formatting, upsells, and currency converters. SideHustle runs 100% in your browser, integrates automated 25% Skatteverket tax calculations, and lets you export production-ready standalone HTML stores or Shopify-compatible CSV files anytime.'
           },
           {
             category: 'getting_started',
             categoryLabel: 'Getting Started',
             q: 'How do the three Experience Modes (Rookie, Standard, Expert CLI) work?',
-            a: 'HustlePipe adapts its interface and AI mentor to your level of experience. Rookie Mode streamlines the navigation to core discovery, store composition, and guided steps with simple terminology. Standard Mode unlocks full operational calculators (25% MOMS and Breakeven ROAS), simulated orders, and viral TikTok copywriters. Expert CLI Mode enables a developer terminal (Cmd+K) for rapid keyboard commands like /scrape [url], /export, and /calc.'
+            a: 'SideHustle adapts its interface and AI mentor to your level of experience. Rookie Mode streamlines the navigation to core discovery, store composition, and guided steps with simple terminology. Standard Mode unlocks full operational calculators (25% MOMS and Breakeven ROAS), simulated orders, and viral TikTok copywriters. Expert CLI Mode enables a developer terminal (Cmd+K) for rapid keyboard commands like /scrape [url], /export, and /calc.'
           },
           {
             category: 'getting_started',
@@ -2042,7 +2279,7 @@
             category: 'ai_byok',
             categoryLabel: 'AI Engine & BYOK',
             q: 'What is BYOK (Bring Your Own Key) and how does it protect my privacy?',
-            a: 'BYOK allows you to plug in your own API key from Groq Cloud (offering ultra-fast Llama 3.3 70B for fractions of a cent) or OpenRouter. Your API key and prompt history are stored strictly in your browser\'s local storage. Zero data passes through intermediary servers. Even without an API key, HustlePipe\'s built-in offline simulation engine provides realistic Scandinavian copy and margin guidance.'
+            a: 'BYOK allows you to plug in your own API key from Groq Cloud (offering ultra-fast Llama 3.3 70B for fractions of a cent) or OpenRouter. Your API key and prompt history are stored strictly in your browser\'s local storage. Zero data passes through intermediary servers. Even without an API key, SideHustle\'s built-in offline simulation engine provides realistic Scandinavian copy and margin guidance.'
           },
           {
             category: 'ai_byok',
@@ -2065,7 +2302,7 @@
                   <span class="w-2.5 h-2.5 rounded-full bg-[#2563EB]"></span>
                   <span class="text-xs font-bold uppercase tracking-wider text-[#2563EB] dark:text-blue-400">Documentation & Knowledge Base</span>
                 </div>
-                <h2 class="text-xl font-bold text-[#0F172A] dark:text-white">About HustlePipe & User Guide</h2>
+                <h2 class="text-xl font-bold text-[#0F172A] dark:text-white">About SideHustle & User Guide</h2>
                 <p class="text-xs text-[#64748B] dark:text-slate-400 mt-1">Master Scandinavian DTC dropshipping, Swedish 25% MOMS rules, and client-side pipeline workflows.</p>
               </div>
 
@@ -2097,7 +2334,7 @@
                         Scandinavian & European DTC Operations Hub
                       </h3>
                       <p class="text-xs sm:text-sm text-[#475569] dark:text-slate-300 mt-2 leading-relaxed">
-                        HustlePipe is a single-screen, zero-backend web workspace designed to take dropshipping operators from product discovery to Skatteverket-compliant launch in under 15 minutes.
+                        SideHustle is a single-screen, zero-backend web workspace designed to take dropshipping operators from product discovery to Skatteverket-compliant launch in under 15 minutes.
                       </p>
                     </div>
                     <div class="flex flex-wrap sm:flex-col gap-2 shrink-0">
@@ -2121,7 +2358,7 @@
                     <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-[#2563EB] dark:text-blue-400">
                       <i data-lucide="layers" class="w-5 h-5"></i>
                     </div>
-                    <h4 class="text-base font-bold text-[#0F172A] dark:text-white">1. What HustlePipe Is</h4>
+                    <h4 class="text-base font-bold text-[#0F172A] dark:text-white">1. What SideHustle Is</h4>
                     <p class="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
                       A self-contained client-side pipeline unifying supplier scraping, margin auditing, drag-and-drop Scandinavian storefront assembly, and BYOK AI marketing into a single interface. Built with vanilla ES6 and Tailwind CSS for instant loading and zero server dependencies.
                     </p>
@@ -2175,7 +2412,7 @@
                     </div>
                     <h4 class="text-base font-bold text-[#0F172A] dark:text-white">4. How Users Interact With It</h4>
                     <p class="text-xs text-[#475569] dark:text-slate-300 leading-relaxed">
-                      HustlePipe provides a structured 6-stage roadmap complemented by an omnipresent contextual AI assistant:
+                      SideHustle provides a structured 6-stage roadmap complemented by an omnipresent contextual AI assistant:
                     </p>
                     <ol class="text-xs text-[#64748B] dark:text-slate-400 space-y-1.5 pt-1 list-decimal list-inside">
                       <li><strong>Configure Profile:</strong> Set Sweden (SEK) and 25% MOMS VAT baseline.</li>
@@ -2189,14 +2426,14 @@
 
                 </div>
 
-                <!-- 5. Why HustlePipe Is Invaluable -->
+                <!-- 5. Why SideHustle Is Invaluable -->
                 <div class="tactile-card bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-[#E5E7EB] dark:border-slate-800 shadow-xs">
                   <div class="flex items-center gap-3 mb-4">
                     <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
                       <i data-lucide="gem" class="w-5 h-5"></i>
                     </div>
                     <div>
-                      <h4 class="text-base font-bold text-[#0F172A] dark:text-white">5. Why HustlePipe Is Invaluable</h4>
+                      <h4 class="text-base font-bold text-[#0F172A] dark:text-white">5. Why SideHustle Is Invaluable</h4>
                       <p class="text-xs text-[#64748B] dark:text-slate-400">Core competitive advantages over traditional e-commerce platforms.</p>
                     </div>
                   </div>
@@ -2545,6 +2782,99 @@
 
       // --- Event Binding & Actions ---
       bindEvents() {
+        // Traditional Menu Toggle & Slide-In Side Panel
+        document.getElementById('btn-toggle-menu')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.sideMenuOpen = !s.uiState.sideMenuOpen;
+            s.uiState.userProfileModalOpen = false;
+          });
+        });
+
+        document.getElementById('btn-close-side-menu')?.addEventListener('click', () => {
+          this.engine.update(s => s.uiState.sideMenuOpen = false);
+        });
+
+        document.getElementById('side-menu-overlay')?.addEventListener('click', () => {
+          this.engine.update(s => s.uiState.sideMenuOpen = false);
+        });
+
+        // Side Menu Navigation Tabs
+        document.querySelectorAll('[data-side-tab]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const tab = e.currentTarget.getAttribute('data-side-tab');
+            this.engine.update(s => {
+              s.uiState.activeTab = tab;
+              s.uiState.sideMenuOpen = false;
+            });
+          });
+        });
+
+        // Side Menu Actions (Tour, Preview, AI, Profile)
+        document.getElementById('btn-side-menu-tour')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.sideMenuOpen = false;
+            s.uiState.onboardingStep = 0;
+            s.uiState.onboardingModalOpen = true;
+          });
+        });
+
+        document.getElementById('btn-side-menu-preview')?.addEventListener('click', () => {
+          this.engine.update(s => s.uiState.sideMenuOpen = false);
+          this.openStorePreview();
+        });
+
+        document.getElementById('btn-side-menu-ai')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.sideMenuOpen = false;
+            s.uiState.aiDrawerOpen = true;
+          });
+        });
+
+        document.getElementById('btn-side-menu-profile')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.sideMenuOpen = false;
+            s.uiState.userProfileModalOpen = true;
+          });
+        });
+
+        // User Profile & Preferences Modal Controls
+        document.getElementById('btn-toggle-user-profile')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.userProfileModalOpen = !s.uiState.userProfileModalOpen;
+            s.uiState.sideMenuOpen = false;
+          });
+        });
+
+        document.getElementById('btn-close-user-profile')?.addEventListener('click', () => {
+          this.engine.update(s => s.uiState.userProfileModalOpen = false);
+        });
+
+        document.getElementById('user-profile-overlay')?.addEventListener('click', () => {
+          this.engine.update(s => s.uiState.userProfileModalOpen = false);
+        });
+
+        document.querySelectorAll('[data-profile-level]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const lvl = e.currentTarget.getAttribute('data-profile-level');
+            this.setExperience(lvl);
+          });
+        });
+
+        document.getElementById('btn-profile-launch-tour')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.userProfileModalOpen = false;
+            s.uiState.onboardingStep = 0;
+            s.uiState.onboardingModalOpen = true;
+          });
+        });
+
+        document.getElementById('btn-profile-open-vault')?.addEventListener('click', () => {
+          this.engine.update(s => {
+            s.uiState.userProfileModalOpen = false;
+            s.uiState.activeTab = 'settings';
+          });
+        });
+
         // Experience Level Buttons
         document.getElementById('btn-lvl-rookie')?.addEventListener('click', () => this.setExperience('rookie'));
         document.getElementById('btn-lvl-inter')?.addEventListener('click', () => this.setExperience('intermediate'));

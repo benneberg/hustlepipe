@@ -1,4 +1,4 @@
-# HustlePipe (SideForge Engine v2.0) — Implementation Roadmap & TODO
+# SideHustle (SideForge Engine v2.0) — Implementation Roadmap & TODO
 
 This document tracks implemented features and all pending roadmap specifications according to `PRD.md` and `ARCHITECTURE.md`.
 
@@ -8,12 +8,23 @@ This document tracks implemented features and all pending roadmap specifications
 
 * **Architecture:** Client-first, zero-runtime-dependency Single-Page Application (SPA)
 * **Design System:** Clean Minimalism (Plus Jakarta Sans, `#F8F9FA` canvas, `#FFFFFF` cards, `#E5E7EB` borders, `#2563EB` primary accent, dark mode `#0F172A` / `#1E293B`)
+* **Navigation:** Dual-mode navigation featuring horizontal scrollable tabs with subtle swipe indicator animations, a traditional menu toggle button sliding in a liquid glass panel, and a dedicated User Profile modal.
 * **Security Layer:** IndexedDB Web Crypto AES-GCM (256-bit) + PBKDF2 device entropy + memory XOR obfuscation
 * **AI Engine:** Bring-Your-Own-Key (BYOK) with real Groq Fast Inference and OpenRouter API gateways
 
 ---
 
-## 1. BYOK AI Inference & Cryptographic Vault
+## 1. Navigation, UI/UX & Liquid Glass Menu System
+
+- [x] **Traditional Menu Toggle Button:** Floating header toggle button (`#btn-toggle-menu`) to open and close the navigation panel.
+- [x] **Liquid Glass Slide-In Side Panel:** Semi-transparent backdrop-blurred glass panel (`bg-white/80 dark:bg-[#0F172A]/85 backdrop-blur-xl`) with navigation tabs, quick action links, and system status indicators.
+- [x] **Subtle Swipe Indicators:** CSS-animated pointing finger/arrow cues (`animate-bounce-x`) indicating horizontal swipeable containers on tabs and steppers.
+- [x] **User Profile & Preferences Modal:** Accessible from header profile icon and side panel; allows toggling experience modes (Rookie, Standard, Expert CLI), viewing vault status, and launching tours.
+- [x] **Consistent Brand Identity:** Unified "SideHustle" naming across `metadata.json`, `index.html`, and documentation.
+
+---
+
+## 2. BYOK AI Inference & Cryptographic Vault
 
 - [x] **IndexedDB Cryptographic Storage:** Store API keys in browser IndexedDB (`hustlepipe_secure_vault_v2`) using Web Crypto AES-GCM 256-bit encryption.
 - [x] **Zero-Knowledge Hardware-Seeded Salt:** Derive PBKDF2 keys using device/browser entropy without hardcoded shared secrets.
@@ -30,12 +41,12 @@ This document tracks implemented features and all pending roadmap specifications
 
 ---
 
-## 2. Onboarding Stepper Guide & Information System
+## 3. Onboarding Stepper Guide & Information System
 
 - [x] **5-Step Onboarding Stepper:** Multi-step modal introducing the pipeline, scraper, composer, Swedish MOMS tax engine, and BYOK AI.
 - [x] **Full-Viewport Modal Protection:** Mobile-responsive modal container with `max-h-[92vh]`, `overflow-y-auto`, and `min-h-0` scrolling.
 - [x] **Navigation Controls:** `Previous`, `Next`, `Skip Tour`, `Finish / Get Started`, and direct step indicator buttons.
-- [x] **State Persistence & Reset:** Persist completion in state; replay tour anytime from Header, Settings, or About page.
+- [x] **State Persistence & Reset:** Persist completion in state; replay tour anytime from Header, Side Panel, Settings, or About page.
 - [x] **About / Information View (3 Sub-Tabs):**
   - [x] **Overview:** Executive summary, problem statement, target personas, interaction model, and value proposition.
   - [x] **Detailed Manual:** 15-minute launch workflow, margin auditing, PostNord logistics, and power user tips.
@@ -45,7 +56,7 @@ This document tracks implemented features and all pending roadmap specifications
 
 ---
 
-## 3. Product Discovery & Scraper Queue
+## 4. Product Discovery & Scraper Queue
 
 - [x] **URL Scraper Queue:** Interface to accept supplier product links and enqueue candidate products.
 - [x] **Nordic Margin Estimation:** Automatic calculation of suggested SEK retail price, gross margins, and estimated shipping costs.
@@ -57,7 +68,7 @@ This document tracks implemented features and all pending roadmap specifications
 
 ---
 
-## 4. Visual Store Composer & Block Engine
+## 5. Visual Store Composer & Block Engine
 
 - [x] **Declarative Block Builder:** Modular section layout (`Hero`, `Problem/Solution`, `Product Showcase`, `Trust Badges`, `Swedish Legal Terms`).
 - [x] **Block Reordering & Customization:** Move Up / Move Down controls and inline content editing.
@@ -76,7 +87,7 @@ This document tracks implemented features and all pending roadmap specifications
 
 ---
 
-## 5. Swedish Tax, Compliance & Operations Engine
+## 6. Swedish Tax, Compliance & Operations Engine
 
 - [x] **Statutory 25% MOMS VAT Calculator:** Real-time calculation of Gross Retail Price, Net Sales Price, and Skatteverket 25% MOMS breakdown.
 - [x] **Breakeven ROAS Calculator:** COGS, shipping freight, and ad CPA profitability calculations.
@@ -92,7 +103,7 @@ This document tracks implemented features and all pending roadmap specifications
 
 ---
 
-## 6. Marketing & Creative Pipeline
+## 7. Marketing & Creative Pipeline
 
 - [x] **Swedish Viral TikTok / Reels Hook Generator:** Dynamic AI scripts targeting Scandinavian consumer psychology.
 - [x] **One-Click Hook Copy:** Clipboard copy for Curiosity Gap, Swedish Guarantee, and Comparison hooks.
@@ -102,7 +113,7 @@ This document tracks implemented features and all pending roadmap specifications
 
 ---
 
-## 7. Platform Architecture & Experience Routing
+## 8. Platform Architecture & Experience Routing
 
 - [x] **Experience Complexity Router:** Adaptive UI tabs, prompts, and controls for Rookie, Standard, and Expert CLI modes.
 - [x] **Expert CLI Bar (`Cmd+K` / `Ctrl+K`):** Fast command palette for power users (`/scrape`, `/moms`, `/roas`, `/store`, `/export`).
@@ -110,3 +121,4 @@ This document tracks implemented features and all pending roadmap specifications
 - [ ] **PWA Offline Installation:** Service worker and Web App Manifest (`manifest.json`) for installability on desktop, iPad, and mobile.
 - [ ] **Encrypted State Backup & Restore:** Export complete encrypted workspace backup to a password-protected JSON file.
 - [ ] **Automated E2E Testing Suite:** Playwright tests verifying state persistence, calculation correctness, and AI gateway fallbacks.
+
