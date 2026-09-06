@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DropTeen">
+<title>DropTeen - Teen Dropshipping Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #1a1a25;
+    --bg-glass: rgba(26, 26, 37, 0.7);
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0b0;
+    --text-muted: #6b6b7b;
+    --accent-purple: #8b5cf6;
+    --accent-pink: #ec4899;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --gradient-1: linear-gradient(135deg, #8b5cf6, #ec4899);
+    --gradient-2: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    --gradient-3: linear-gradient(135deg, #10b981, #3b82f6);
+    --gradient-4: linear-gradient(135deg, #f59e0b, #ef4444);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+    --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg-primary: #f8f9fc;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-glass: rgba(255, 255, 255, 0.8);
+      --text-primary: #0a0a0f;
+      --text-secondary: #4a4a5a;
+      --text-muted: #8b8b9b;
+    }
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    padding-bottom: 90px;
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+
+  /* Background Gradient Orbs */
+  .bg-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-orb-1 {
+    width: 300px; height: 300px;
+    background: var(--accent-purple);
+    top: -100px; left: -100px;
+    animation: floatOrb 8s ease-in-out infinite;
+  }
+  .bg-orb-2 {
+    width: 250px; height: 250px;
+    background: var(--accent-pink);
+    bottom: 20%; right: -80px;
+    animation: floatOrb 10s ease-in-out infinite reverse;
+  }
+  .bg-orb-3 {
+    width: 200px; height: 200px;
+    background: var(--accent-blue);
+    top: 50%; left: 30%;
+    animation: floatOrb 12s ease-in-out infinite;
+  }
+
+  @keyframes floatOrb {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(30px, -30px) scale(1.1); }
+  }
+
+  /* App Container */
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo {
+    width: 36px;
+    height: 36px;
+    background: var(--gradient-1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--shadow-glow);
+  }
+
+  .logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 10px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+  }
+
+  .icon-btn:active {
+    transform: scale(0.9);
+  }
+
+  .icon-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: var(--text-primary);
+  }
+
+  .notif-dot {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 8px; height: 8px;
+    background: var(--accent-pink);
+    border-radius: 50%;
+    border: 2px solid var(--bg-card);
+  }
+
+  /* Page Container */
+  .page {
+    display: none;
+    animation: slideUp 0.3s ease;
+    padding: 16px 16px 20px;
+  }
+
+  .page.active {
+    display: block;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Welcome Card */
+  .welcome-card {
+    background: var(--gradient-1);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    animation: floatCard 4s ease-in-out infinite;
+  }
+
+  @keyframes floatCard {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .welcome-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; right: -30%;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+  }
+
+  .welcome-card h2 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: white;
+  }
+
+  .welcome-card p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 14px;
+  }
+
+  .welcome-stats {
+    display: flex;
+    gap: 12px;
+  }
+
+  .welcome-stat {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 8px 12px;
+    flex: 1;
+  }
+
+  .welcome-stat-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .welcome-stat-lbl {
+    font-size: 10px;
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* Section Headers */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0 12px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title-emoji {
+    font-size: 18px;
+  }
+
+  .section-link {
+    font-size: 12px;
+    color: var(--accent-purple);
+    font-weight: 600;
+  }
+
+  /* XP Progress */
+  .xp-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .xp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .xp-level {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .level-badge {
+    width: 36px;
+    height: 36px;
+    background: var(--gradient-2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: white;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
+  }
+
+  .xp-info h4 {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .xp-info p {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .xp-points {
+    text-align: right;
+  }
+
+  .xp-points-val {
+    font-size: 16px;
+    font-weight: 800;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .xp-points-lbl {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--gradient-1);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: width 1s ease;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .xp-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* Quick Actions Grid */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .quick-item {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 12px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .quick-item:active {
+    transform: scale(0.92);
+  }
+
+  .quick-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 6px;
+    font-size: 20px;
+  }
+
+  .quick-icon.purple { background: rgba(139, 92, 246, 0.15); }
+  .quick-icon.pink { background: rgba(236, 72, 153, 0.15); }
+  .quick-icon.blue { background: rgba(59, 130, 246, 0.15); }
+  .quick-icon.green { background: rgba(16, 185, 129, 0.15); }
+  .quick-icon.orange { background: rgba(245, 158, 11, 0.15); }
+  .quick-icon.red { background: rgba(239, 68, 68, 0.15); }
+
+  .quick-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  /* Tutorial Cards */
+  .tutorial-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 0 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .tutorial-card {
+    min-width: 260px;
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    scroll-snap-align: start;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .tutorial-card:active {
+    transform: scale(0.97);
+  }
+
+  .tutorial-thumb {
+    height: 110px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+  }
+
+  .tutorial-thumb.purple { background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3)); }
+  .tutorial-thumb.blue { background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3)); }
+  .tutorial-thumb.green { background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(59, 130, 246, 0.3)); }
+
+  .tutorial-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+
+  .tutorial-duration {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    color: white;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 6px;
+  }
+
+  .tutorial-content {
+    padding: 12px;
+  }
+
+  .tutorial-content h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .tutorial-content p {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .tutorial-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* Mentor Card */
+  .mentor-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mentor-card:active {
+    transform: scale(0.98);
+  }
+
+  .mentor-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .mentor-online {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 14px; height: 14px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    border: 3px solid var(--bg-card);
+  }
+
+  .mentor-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mentor-info h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .mentor-info p {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .mentor-tags {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .mentor-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+    font-weight: 600;
+  }
+
+  .mentor-action {
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mentor-action:active {
+    transform: scale(0.92);
+  }
+
+  /* Tools Section */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .tool-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tool-card:active {
+    transform: scale(0.97);
+  }
+
+  .tool-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .tool-card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .tool-card p {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .tool-status {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+  }
+
+  /* Chat Page */
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .chat-mentor-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: var(--gradient-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .chat-mentor-info h3 {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .chat-mentor-info p {
+    font-size: 11px;
+    color: var(--accent-green);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .chat-mentor-info p::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent-green);
+    border-radius: 50%;
+  }
+
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .chat-msg {
+    max-width: 85%;
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    animation: msgSlide 0.3s ease;
+  }
+
+  @keyframes msgSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chat-msg.bot {
+    background: var(--bg-card);
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+  }
+
+  .chat-msg.user {
+    background: var(--gradient-1);
+    color: white;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+  }
+
+  .chat-quick {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0;
+    margin-bottom: 12px;
+  }
+
+  .chat-quick-item {
+    background: var(--bg-card);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    color: var(--accent-purple);
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .chat-quick-item:active {
+    transform: scale(0.95);
+    background: var(--accent-purple);
+    color: white;
+  }
+
+  .chat-input {
+    position: fixed;
+    bottom: 80px;
+    left: 0; right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    z-index: 50;
+  }
+
+  .chat-input input {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .chat-input button {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--gradient-1);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .chat-input button:active {
+    transform: scale(0.9);
+  }
+
+  /* Steps Page */
+  .step-timeline {
+    position: relative;
+    padding-left: 30px;
+  }
+
+  .step-timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent-purple), var(--accent-pink));
+  }
+
+  .step-item {
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  .step-item::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 3px solid var(--accent-purple);
+    z-index: 1;
+  }
+
+  .step-item.completed::before {
+    background: var(--gradient-1);
+    border-color: transparent;
+  }
+
+  .step-item.active::before {
+    background: var(--accent-purple);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); }
+    50% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0.1); }
+  }
+
+  .step-content {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .step-content:active {
+    transform: scale(0.98);
+  }
+
+  .step-num {
+    font-size: 10px;
+    color: var(--accent-purple);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step-content h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 4px 0 6px;
+  }
+
+  .step-content p {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .step-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .step-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Products Page */
+  .product-search {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .product-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .product-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 12px;
+  }
+
+  .filter-chip {
+    background: var(--bg-card);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .filter-chip.active {
+    background: var(--gradient-1);
+    color: white;
+    border-color: transparent;
+  }
+
+  .product-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .product-card:active {
+    transform: scale(0.98);
+  }
+
+  .product-image {
+    height: 140px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    position: relative;
+  }
+
+  .product-trend {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: var(--accent-pink);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+
+  .product-save {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 32px; height: 32px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .product-info {
+    padding: 12px;
+  }
+
+  .product-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .product-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .product-price {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent-green);
+  }
+
+  .product-margin {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .product-btn {
+    width: 100%;
+    background: var(--gradient-1);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+  }
+
+  .product-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Profile Page */
+  .profile-header {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: var(--gradient-1);
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    box-shadow: var(--shadow-glow);
+  }
+
+  .profile-name {
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .profile-bio {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .profile-stat {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 14px 8px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .profile-stat-val {
+    font-size: 18px;
+    font-weight: 800;
+    background: var(--gradient-1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .profile-stat-lbl {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .profile-section {
+    background: var(--bg-card);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .profile-section-title {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .profile-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-top: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .profile-item:active {
+    background: var(--bg-secondary);
+  }
+
+  .profile-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .profile-item-text {
+    flex: 1;
+  }
+
+  .profile-item-text h4 {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .profile-item-text p {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .profile-arrow {
+    color: var(--text-muted);
+    font-size: 18px;
+  }
+
+  /* Bottom Navigation */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 10px 8px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0));
+    display: flex;
+    justify-content: space-around;
+    z-index: 100;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-muted);
+    position: relative;
+  }
+
+  .nav-item.active {
+    color: var(--accent-purple);
+  }
+
+  .nav-item:active {
+    transform: scale(0.9);
+  }
+
+  .nav-item svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+
+  .nav-label {
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    background: var(--gradient-1);
+    border-radius: 2px;
+  }
+
+  /* Modal / Bottom Sheet */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .modal-backdrop.active {
+    display: flex;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: var(--bg-card);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 20px;
+    animation: slideUpModal 0.3s ease;
+  }
+
+  @keyframes slideUpModal {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--text-muted);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .modal h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .modal-close {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: none;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--bg-card);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 14px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    z-index: 300;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--gradient-1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 400;
+  }
+
+  /* Pull to refresh */
+  .pull-indicator {
+    text-align: center;
+    padding: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    display: none;
+  }
+
+  .pull-indicator.show {
+    display: block;
+  }
+
+  /* Skeleton loader */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg-card), var(--bg-secondary), var(--bg-card));
+    background-size: 200% 100%;
+    animation: skeleton 1.5s infinite;
+    border-radius: 8px;
+  }
+
+  @keyframes skeleton {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🚀</div>
+      <div class="logo-text">DropTeen</div>
+    </div>
+    <div class="header-right">
+      <div class="icon-btn" onclick="showToast('No new notifications ✨')">
+        <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <div class="notif-dot"></div>
+      </div>
+      <div class="icon-btn" onclick="navigateTo('profile')">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="home-page">
+    <div class="welcome-card">
+      <h2>Hey, Future CEO! 👋</h2>
+      <p>Ready to build your dropshipping empire today?</p>
+      <div class="welcome-stats">
+        <div class="welcome-stat">
+          <div class="welcome-stat-val">$0</div>
+          <div class="welcome-stat-lbl">Revenue</div>
+        </div>
+        <div class="welcome-stat">
+          <div class="welcome-stat-val">0</div>
+          <div class="welcome-stat-lbl">Orders</div>
+        </div>
+        <div class="welcome-stat">
+          <div class="welcome-stat-val">3</div>
+          <div class="welcome-stat-lbl">Streak 🔥</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="xp-card">
+      <div class="xp-header">
+        <div class="xp-level">
+          <div class="level-badge">L2</div>
+          <div class="xp-info">
+            <h4>Level 2: Beginner Hustler</h4>
+            <p>Keep learning to level up!</p>
+          </div>
+        </div>
+        <div class="xp-points">
+          <div class="xp-points-val">450</div>
+          <div class="xp-points-lbl">XP</div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 45%"></div>
+      </div>
+      <div class="xp-footer">
+        <span>450 XP</span>
+        <span>1000 XP to Level 3</span>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">⚡ Quick Actions</div>
+    </div>
+
+    <div class="quick-grid">
+      <div class="quick-item" onclick="openModal('ai-coach')">
+        <div class="quick-icon purple">🤖</div>
+        <div class="quick-label">AI Coach</div>
+      </div>
+      <div class="quick-item" onclick="navigateTo('products')">
+        <div class="quick-icon pink">🛍️</div>
+        <div class="quick-label">Products</div>
+      </div>
+      <div class="quick-item" onclick="openModal('scraper')">
+        <div class="quick-icon blue">🔍</div>
+        <div class="quick-label">Scraper</div>
+      </div>
+      <div class="quick-item" onclick="openModal('builder')">
+        <div class="quick-icon green">🏪</div>
+        <div class="quick-label">Store</div>
+      </div>
+      <div class="quick-item" onclick="navigateTo('chat')">
+        <div class="quick-icon orange">💬</div>
+        <div class="quick-label">Chat</div>
+      </div>
+      <div class="quick-item" onclick="openModal('marketing')">
+        <div class="quick-icon red">📣</div>
+        <div class="quick-label">Marketing</div>
+      </div>
+      <div class="quick-item" onclick="openModal('analytics')">
+        <div class="quick-icon purple">📊</div>
+        <div class="quick-label">Analytics</div>
+      </div>
+      <div class="quick-item" onclick="openModal('tools')">
+        <div class="quick-icon green">🛠️</div>
+        <div class="quick-label">More</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">🎓 Daily Tutorials</div>
+      <div class="section-link" onclick="navigateTo('steps')">See all</div>
+    </div>
+
+    <div class="tutorial-scroll">
+      <div class="tutorial-card" onclick="openModal('tutorial1')">
+        <div class="tutorial-thumb purple">
+          <div class="tutorial-badge">Trending</div>
+          🎯
+          <div class="tutorial-duration">8 min</div>
+        </div>
+        <div class="tutorial-content">
+          <h4>Find Your First Winning Product</h4>
+          <p>Learn the secret formula top teens use to spot viral products before they explode.</p>
+          <div class="tutorial-meta">
+            <span>👁 2.4k views</span>
+            <span>⭐ 4.9</span>
+          </div>
+        </div>
+      </div>
+      <div class="tutorial-card" onclick="openModal('tutorial2')">
+        <div class="tutorial-thumb blue">
+          <div class="tutorial-badge">New</div>
+          💰
+          <div class="tutorial-duration">12 min</div>
+        </div>
+        <div class="tutorial-content">
+          <h4>Set Up Your First Ad Campaign</h4>
+          <p>From $5/day to $1000/day - the exact Meta Ads strategy that works in 2025.</p>
+          <div class="tutorial-meta">
+            <span>👁 1.8k views</span>
+            <span>⭐ 4.8</span>
+          </div>
+        </div>
+      </div>
+      <div class="tutorial-card" onclick="openModal('tutorial3')">
+        <div class="tutorial-thumb green">
+          <div class="tutorial-badge">Hot</div>
+          🚀
+          <div class="tutorial-duration">15 min</div>
+        </div>
+        <div class="tutorial-content">
+          <h4>Build a Store That Converts 3%+</h4>
+          <p>Shopify + AI builder combo. Get a pro store in under 30 minutes.</p>
+          <div class="tutorial-meta">
+            <span>👁 3.1k views</span>
+            <span>⭐ 5.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">🧙 AI Mentors Online</div>
+    </div>
+
+    <div class="mentor-card" onclick="navigateTo('chat')">
+      <div class="mentor-avatar" style="background: var(--gradient-1);">🧠</div>
+      <div class="mentor-info">
+        <h4>Zara - The Strategist</h4>
+        <p>Business & marketing expert</p>
+        <div class="mentor-tags">
+          <div class="mentor-tag">Ads</div>
+          <div class="mentor-tag">Strategy</div>
+        </div>
+      </div>
+      <div class="mentor-online"></div>
+      <button class="mentor-action">Chat</button>
+    </div>
+
+    <div class="mentor-card" onclick="navigateTo('chat')">
+      <div class="mentor-avatar" style="background: var(--gradient-2);">💎</div>
+      <div class="mentor-info">
+        <h4>Max - The Product Hunter</h4>
+        <p>Winning product specialist</p>
+        <div class="mentor-tags">
+          <div class="mentor-tag">Products</div>
+          <div class="mentor-tag">Trends</div>
+        </div>
+      </div>
+      <div class="mentor-online"></div>
+      <button class="mentor-action">Chat</button>
+    </div>
+
+    <div class="mentor-card" onclick="navigateTo('chat')">
+      <div class="mentor-avatar" style="background: var(--gradient-3);">🎨</div>
+      <div class="mentor-info">
+        <h4>Luna - The Creative</h4>
+        <p>Brand & content design pro</p>
+        <div class="mentor-tags">
+          <div class="mentor-tag">Design</div>
+          <div class="mentor-tag">UGC</div>
+        </div>
+      </div>
+      <div class="mentor-online"></div>
+      <button class="mentor-action">Chat</button>
+    </div>
+  </div>
+
+  <!-- STEPS PAGE -->
+  <div class="page" id="steps-page">
+    <div class="section-header">
+      <div class="section-title">🗺️ Your Roadmap</div>
+    </div>
+
+    <div class="xp-card">
+      <div class="xp-header">
+        <div class="xp-level">
+          <div class="level-badge" style="background: var(--gradient-3);">2/8</div>
+          <div class="xp-info">
+            <h4>25% Complete</h4>
+            <p>You're crushing it! Keep going.</p>
+          </div>
+        </div>
+        <div class="xp-points">
+          <div class="xp-points-val">25%</div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 25%"></div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">✅ Journey Steps</div>
+    </div>
+
+    <div class="step-timeline">
+      <div class="step-item completed" onclick="openModal('step1')">
+        <div class="step-content">
+          <div class="step-num">Step 1</div>
+          <h4>🧠 Mindset & Basics</h4>
+          <p>Learn what dropshipping really is, the money math, and teen-friendly business models.</p>
+          <div class="step-meta">
+            <span>⏱ 20 min</span>
+            <span>📚 5 lessons</span>
+            <span>🏆 +100 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item completed" onclick="openModal('step2')">
+        <div class="step-content">
+          <div class="step-num">Step 2</div>
+          <h4>🎯 Niche Selection</h4>
+          <p>Find a profitable niche using AI tools, trend data, and the 7-figure niche formula.</p>
+          <div class="step-meta">
+            <span>⏱ 35 min</span>
+            <span>📚 7 lessons</span>
+            <span>🏆 +150 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item active" onclick="openModal('step3')">
+        <div class="step-content">
+          <div class="step-num">Step 3 • In Progress</div>
+          <h4>🛍️ Product Research</h4>
+          <p>Master the product hunting framework used by 7-figure stores. Includes scraper tools.</p>
+          <div class="step-meta">
+            <span>⏱ 45 min</span>
+            <span>📚 9 lessons</span>
+            <span>🏆 +200 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item" onclick="openModal('step4')">
+        <div class="step-content">
+          <div class="step-num">Step 4</div>
+          <h4>🏪 Store Setup</h4>
+          <p>Build a high-converting Shopify store with our AI builder. No code required.</p>
+          <div class="step-meta">
+            <span>⏱ 60 min</span>
+            <span>📚 8 lessons</span>
+            <span>🏆 +250 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item" onclick="openModal('step5')">
+        <div class="step-content">
+          <div class="step-num">Step 5</div>
+          <h4>📣 Marketing Mastery</h4>
+          <p>TikTok, Instagram, Meta Ads. Learn the viral content formula + paid ads strategy.</p>
+          <div class="step-meta">
+            <span>⏱ 90 min</span>
+            <span>📚 12 lessons</span>
+            <span>🏆 +300 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item" onclick="openModal('step6')">
+        <div class="step-content">
+          <div class="step-num">Step 6</div>
+          <h4>💰 First Sale Strategy</h4>
+          <p>The exact playbook to get your first sale within 7 days. Includes outreach templates.</p>
+          <div class="step-meta">
+            <span>⏱ 40 min</span>
+            <span>📚 6 lessons</span>
+            <span>🏆 +200 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item" onclick="openModal('step7')">
+        <div class="step-content">
+          <div class="step-num">Step 7</div>
+          <h4>📈 Scaling to $10K/month</h4>
+          <p>Advanced strategies: testing, optimization, automation, and team building.</p>
+          <div class="step-meta">
+            <span>⏱ 120 min</span>
+            <span>📚 15 lessons</span>
+            <span>🏆 +500 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-item" onclick="openModal('step8')">
+        <div class="step-content">
+          <div class="step-num">Step 8</div>
+          <h4>🏆 Brand Empire</h4>
+          <p>Build a real brand, not just a store. Private label, community, and exit strategies.</p>
+          <div class="step-meta">
+            <span>⏱ 150 min</span>
+            <span>📚 18 lessons</span>
+            <span>🏆 +1000 XP</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS PAGE -->
+  <div class="page" id="products-page">
+    <div class="section-header">
+      <div class="section-title">🛍️ Winning Products</div>
+    </div>
+
+    <div class="product-search">
+      <span>🔍</span>
+      <input type="text" placeholder="Search trending products...">
+    </div>
+
+    <div class="product-filters">
+      <div class="filter-chip active">🔥 All</div>
+      <div class="filter-chip">📈 Trending</div>
+      <div class="filter-chip">💎 High Margin</div>
+      <div class="filter-chip">🎯 Low Competition</div>
+      <div class="filter-chip">⭐ Top Rated</div>
+    </div>
+
+    <div class="product-card">
+      <div class="product-image" style="background: linear-gradient(135deg, #2d1b4e, #4a1a5e);">
+        <div class="product-trend">🔥 HOT</div>
+        <button class="product-save">🤍</button>
+        🎧
+      </div>
+      <div class="product-info">
+        <div class="product-name">LED Gaming Headset Stand</div>
+        <div class="product-stats">
+          <div>
+            <div class="product-price">$24.99</div>
+            <div class="product-margin">Margin: 65% • 2.4k sold/wk</div>
+          </div>
+        </div>
+        <button class="product-btn" onclick="addProduct()">+ Add to Store</button>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="product-image" style="background: linear-gradient(135deg, #1e3a5f, #2d4a6f);">
+        <div class="product-trend">⚡ TRENDING</div>
+        <button class="product-save">🤍</button>
+        ⌚
+      </div>
+      <div class="product-info">
+        <div class="product-name">Smart Fitness Ring</div>
+        <div class="product-stats">
+          <div>
+            <div class="product-price">$19.99</div>
+            <div class="product-margin">Margin: 70% • 5.1k sold/wk</div>
+          </div>
+        </div>
+        <button class="product-btn" onclick="addProduct()">+ Add to Store</button>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="product-image" style="background: linear-gradient(135deg, #4a2d1b, #5e3a1a);">
+        <div class="product-trend">💎 GEM</div>
+        <button class="product-save">🤍</button>
+        🧴
+      </div>
+      <div class="product-info">
+        <div class="product-name">Collagen Lip Mask Set</div>
+        <div class="product-stats">
+          <div>
+            <div class="product-price">$14.99</div>
+            <div class="product-margin">Margin: 75% • 8.7k sold/wk</div>
+          </div>
+        </div>
+        <button class="product-btn" onclick="addProduct()">+ Add to Store</button>
+      </div>
+    </div>
+
+    <div class="product-card">
+      <div class="product-image" style="background: linear-gradient(135deg, #1b4a3a, #2d5e4a);">
+        <div class="product-trend">🌟 NEW</div>
+        <button class="product-save">🤍</button>
+        🪑
+      </div>
+      <div class="product-info">
+        <div class="product-name">Portable Laptop Stand</div>
+        <div class="product-stats">
+          <div>
+            <div class="product-price">$22.99</div>
+            <div class="product-margin">Margin: 68% • 3.2k sold/wk</div>
+          </div>
+        </div>
+        <button class="product-btn" onclick="addProduct()">+ Add to Store</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT PAGE -->
+  <div class="page" id="chat-page">
+    <div class="chat-header">
+      <div class="chat-mentor-avatar">🧠</div>
+      <div class="chat-mentor-info">
+        <h3>Zara - The Strategist</h3>
+        <p>Online • Ready to help</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto;">
+      <div class="filter-chip active" onclick="switchMentor('zara', this)">🧠 Zara</div>
+      <div class="filter-chip" onclick="switchMentor('max', this)">💎 Max</div>
+      <div class="filter-chip" onclick="switchMentor('luna', this)">🎨 Luna</div>
+      <div class="filter-chip" onclick="switchMentor('tech', this)">⚙️ Tech</div>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-msg bot">Hey! 👋 I'm Zara, your AI business strategist. I help teen founders like you build dropshipping empires. What's on your mind today?</div>
+    </div>
+
+    <div class="chat-quick">
+      <div class="chat-quick-item" onclick="sendQuick('How do I find winning products?')">🎯 Find products</div>
+      <div class="chat-quick-item" onclick="sendQuick('How do I start ads with $50?')">💰 Start ads</div>
+      <div class="chat-quick-item" onclick="sendQuick('Best niches for 2025?')">🔥 Hot niches</div>
+      <div class="chat-quick-item" onclick="sendQuick('Build me a store')">🏪 Build store</div>
+    </div>
+  </div>
+
+  <div class="chat-input" id="chat-input" style="display: none;">
+    <input type="text" placeholder="Ask anything..." id="chat-input-field" onkeypress="if(event.key==='Enter')sendMessage()">
+    <button onclick="sendMessage()">➤</button>
+  </div>
+
+  <!-- PROFILE PAGE -->
+  <div class="page" id="profile-page">
+    <div class="profile-header">
+      <div class="profile-avatar">🚀</div>
+      <div class="profile-name">Young Hustler</div>
+      <div class="profile-bio">Future dropshipping mogul • Level 2</div>
+    </div>
+
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <div class="profile-stat-val">450</div>
+        <div class="profile-stat-lbl">Total XP</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-val">12</div>
+        <div class="profile-stat-lbl">Lessons</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-val">3 🔥</div>
+        <div class="profile-stat-lbl">Streak</div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">My Business</div>
+      <div class="profile-item" onclick="openModal('builder')">
+        <div class="profile-item-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple);">🏪</div>
+        <div class="profile-item-text">
+          <h4>My Store</h4>
+          <p>Not created yet</p>
+        </div>
+        <div class="profile-arrow">›</div>
+      </div>
+      <div class="profile-item" onclick="openModal('marketing')">
+        <div class="profile-item-icon" style="background: rgba(236, 72, 153, 0.15); color: var(--accent-pink);">📣</div>
+        <div class="profile-item-text">
+          <h4>Ad Campaigns</h4>
+          <p>0 active</p>
+        </div>
+        <div class="profile-arrow">›</div>
+      </div>
+      <div class="profile-item" onclick="navigateTo('products')">
+        <div class="profile-item-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">🛍️</div>
+        <div class="profile-item-text">
+          <h4>Saved Products</h4>
+          <p>0 items</p>
+        </div>
+        <div class="profile-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Achievements</div>
+      <div class="profile-item">
+        <div class="profile-item-icon" style="background: rgba(245, 158, 11, 0.15);">🏆</div>
+        <div class="profile-item-text">
+          <h4>First Steps</h4>
+          <p>Completed Step 1</p>
+        </div>
+        <div class="profile-arrow">✓</div>
+      </div>
+      <div class="profile-item">
+        <div class="profile-item-icon" style="background: rgba(16, 185, 129, 0.15);">🔥</div>
+        <div class="profile-item-text">
+          <h4>3-Day Streak</h4>
+          <p>Learning consistently</p>
+        </div>
+        <div class="profile-arrow">✓</div>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">Settings</div>
+      <div class="profile-item">
+        <div class="profile-item-icon" style="background: rgba(139, 92, 246, 0.15);">🌙</div>
+        <div class="profile-item-text">
+          <h4>Dark Mode</h4>
+          <p>Auto-detect</p>
+        </div>
+        <div class="profile-arrow">›</div>
+      </div>
+      <div class="profile-item">
+        <div class="profile-item-icon" style="background: rgba(59, 130, 246, 0.15);">🔔</div>
+        <div class="profile-item-text">
+          <h4>Notifications</h4>
+          <p>All enabled</p>
+        </div>
+        <div class="profile-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="navigateTo('home')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <div class="nav-label">Home</div>
+    </div>
+    <div class="nav-item" onclick="navigateTo('steps')">
+      <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+      <div class="nav-label">Steps</div>
+    </div>
+    <div class="nav-item" onclick="navigateTo('products')">
+      <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      <div class="nav-label">Products</div>
+    </div>
+    <div class="nav-item" onclick="navigateTo('chat')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+      <div class="nav-label">AI Chat</div>
+    </div>
+    <div class="nav-item" onclick="navigateTo('profile')">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <div class="nav-label">Profile</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModal(event)">
+  <div class="modal" id="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-body"></div>
+    <button class="modal-close" onclick="closeModal()">Got it! ✨</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon">✓</div>
+  <span id="toast-text">Action completed!</span>
+</div>
+
+<script>
+  // Modal content templates
+  const modals = {
+    'ai-coach': {
+      title: '🤖 AI Business Coach',
+      content: `
+        <p>Your personal AI mentor analyzes trends, suggests products, and writes your ads. Get instant answers 24/7.</p>
+        <div class="tools-grid" style="margin-top: 16px;">
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(139, 92, 246, 0.15);">📈</div>
+            <h4>Trend Predictor</h4>
+            <p>AI spots viral products 2-3 weeks early</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(236, 72, 153, 0.15);">✍️</div>
+            <h4>Ad Copywriter</h4>
+            <p>Generates scroll-stopping ad scripts</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(59, 130, 246, 0.15);">🎨</div>
+            <h4>Creative Generator</h4>
+            <p>UGC-style video scripts & images</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(16, 185, 129, 0.15);">💰</div>
+            <h4>Profit Calculator</h4>
+            <p>Real-time margin & ROAS analysis</p>
+          </div>
+        </div>
+      `
+    },
+    'scraper': {
+      title: '🔍 Product Scraper',
+      content: `
+        <p>Scrape winning products from TikTok, AliExpress, Amazon & more. Our AI ranks them by viral potential.</p>
+        <div class="product-card" style="margin-top: 12px;">
+          <div class="product-info">
+            <div class="product-name">📦 TikTok Scraper</div>
+            <p style="font-size: 11px; color: var(--text-muted);">Find products going viral right now</p>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-info">
+            <div class="product-name">🏪 Shopify Tracker</div>
+            <p style="font-size: 11px; color: var(--text-muted);">Spy on competitor stores in real-time</p>
+          </div>
+        </div>
+        <div class="product-card">
+          <div class="product-info">
+            <div class="product-name">📊 Ad Library</div>
+            <p style="font-size: 11px; color: var(--text-muted);">See top-performing ads across platforms</p>
+          </div>
+        </div>
+      `
+    },
+    'builder': {
+      title: '🏪 AI Store Builder',
+      content: `
+        <p>Build a conversion-optimized Shopify store in under 30 minutes. No coding. Just answer a few questions.</p>
+        <div style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; margin: 12px 0;">
+          <h4 style="font-size: 13px; margin-bottom: 8px;">✨ What you get:</h4>
+          <ul style="font-size: 12px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+            <li>Pre-vetted winning theme</li>
+            <li>AI-written product descriptions</li>
+            <li>High-converting checkout flow</li>
+            <li>Mobile-optimized design</li>
+            <li>Free SSL & domain setup</li>
+            <li>14-day free trial</li>
+          </ul>
+        </div>
+        <button class="product-btn" onclick="showToast('Store builder starting! 🚀')">Start Building - Free</button>
+      `
+    },
+    'marketing': {
+      title: '📣 Marketing Suite',
+      content: `
+        <p>All-in-one marketing toolkit. Create ads, schedule posts, find influencers & track everything.</p>
+        <div class="tools-grid" style="margin-top: 12px;">
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(139, 92, 246, 0.15);">📱</div>
+            <h4>TikTok Ads</h4>
+            <p>Spark Ads wizard</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(236, 72, 153, 0.15);">📸</div>
+            <h4>IG Reels</h4>
+            <p>Viral content templates</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(59, 130, 246, 0.15);">🎯</div>
+            <h4>Meta Ads</h4>
+            <p>FB + IG campaigns</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(16, 185, 129, 0.15);">🤝</div>
+            <h4>Influencer Hub</h4>
+            <p>Find & contact creators</p>
+          </div>
+        </div>
+      `
+    },
+    'analytics': {
+      title: '📊 Analytics',
+      content: `
+        <p>Track your dropshipping empire in real-time. See what's working and what's not.</p>
+        <div class="xp-card" style="margin-top: 12px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px;">Total Revenue</span>
+            <span style="font-size: 14px; font-weight: 700; color: var(--accent-green);">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px;">Total Orders</span>
+            <span style="font-size: 14px; font-weight: 700;">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 12px;">Conversion Rate</span>
+            <span style="font-size: 14px; font-weight: 700; color: var(--accent-purple);">0%</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 12px;">Avg Order Value</span>
+            <span style="font-size: 14px; font-weight: 700;">$0</span>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Connect your store to start tracking real data 📈</p>
+      `
+    },
+    'tools': {
+      title: '🛠️ More Tools',
+      content: `
+        <p>Essential tools every teen dropshipper needs.</p>
+        <div class="tools-grid" style="margin-top: 12px;">
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(245, 158, 11, 0.15);">📧</div>
+            <h4>Email Marketing</h4>
+            <p>Auto flows & broadcasts</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(239, 68, 68, 0.15);">🎯</div>
+            <h4>Retargeting</h4>
+            <p>Pixel & audience builder</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(139, 92, 246, 0.15);">📦</div>
+            <h4>Inventory</h4>
+            <p>Auto-sync with suppliers</p>
+          </div>
+          <div class="tool-card">
+            <div class="tool-icon" style="background: rgba(236, 72, 153, 0.15);">💬</div>
+            <h4>Support Bot</h4>
+            <p>24/7 AI customer service</p>
+          </div>
+        </div>
+      `
+    },
+    'tutorial1': {
+      title: '🎯 Find Winning Products',
+      content: `
+        <p>The #1 skill in dropshipping. Master this and you'll never struggle for sales again.</p>
+        <div style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; margin: 12px 0;">
+          <h4 style="font-size: 13px; margin-bottom: 8px;">📋 The 5-Point Filter:</h4>
+          <ol style="font-size: 12px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+            <li><strong>Problem-solving:</strong> Does it fix a real pain?</li>
+            <li><strong>Novelty:</strong> Is it new/unique enough?</li>
+            <li><strong>Impulse buy:</strong> Under $50 ideally</li>
+            <li><strong>3x markup:</strong> At least 200% margin</li>
+            <li><strong>Not on Amazon:</strong> Can't find in 2 clicks</li>
+          </ol>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted);">⏱ Watch the full 8-min video lesson inside</p>
+      `
+    },
+    'step1': {
+      title: '🧠 Step 1: Mindset & Basics',
+      content: `
+        <p>Before anything else, master the foundation. Most teens skip this and fail.</p>
+        <div style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; margin: 12px 0;">
+          <h4 style="font-size: 13px; margin-bottom: 8px;">📚 Lessons in this step:</h4>
+          <ul style="font-size: 12px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+            <li>What dropshipping really is (and isn't)</li>
+            <li>The honest money math (realistic expectations)</li>
+            <li>Teen-friendly business models</li>
+            <li>Legal basics (LLC, taxes, age limits)</li>
+            <li>Setting up payments (Stripe, PayPal)</li>
+          </ul>
+        </div>
+        <button class="product-btn" onclick="showToast('+100 XP earned! 🎉'); confetti();">Complete Step 1</button>
+      `
+    }
+  };
+
+  // Generate similar content for other steps
+  for (let i = 2; i <= 8; i++) {
+    const titles = ['', '', 'Product Research', 'Store Setup', 'Marketing Mastery', 'First Sale Strategy', 'Scaling to $10K/month', 'Brand Empire'];
+    const descriptions = ['', '', 'Product hunting framework', 'Build a high-converting store', 'TikTok, IG, Meta Ads mastery', 'Get your first sale in 7 days', 'Scale with automation', 'Build a real brand'];
+    if (i > 1) {
+      modals[`step${i}`] = {
+        title: `Step ${i}: ${titles[i]}`,
+        content: `
+          <p>${descriptions[i]} - Unlock this step to continue your journey.</p>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 12px; margin: 12px 0;">
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0;">🔒 Complete previous steps to unlock</p>
+          </div>
+          <button class="product-btn" onclick="showToast('Coming soon! 🚀')">Preview Lessons</button>
+        `
+      };
+    }
+  }
+
+  // Navigation
+  function navigateTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`${page}-page`).classList.add('active');
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    
+    const chatInput = document.getElementById('chat-input');
+    if (page === 'chat') {
+      chatInput.style.display = 'flex';
+    } else {
+      chatInput.style.display = 'none';
+    }
+    window.scrollTo(0, 0);
+  }
+
+  // Modal
+  function openModal(id) {
+    const data = modals[id] || {
+      title: 'Coming Soon! 🚀',
+      content: '<p>This feature is being built. Stay tuned for updates!</p>'
+    };
+    document.getElementById('modal-body').innerHTML = `
+      <h3>${data.title}</h3>
+      ${data.content}
+    `;
+    document.getElementById('modal-backdrop').classList.add('active');
+  }
+
+  function closeModal(e) {
+    if (!e || e.target.id === 'modal-backdrop' || e.target.classList.contains('modal-close')) {
+      document.getElementById('modal-backdrop').classList.remove('active');
+    }
+  }
+
+  // Toast
+  function showToast(msg) {
+    document.getElementById('toast-text').textContent = msg;
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // Confetti
+  function confetti() {
+    const colors = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'];
+    for (let i = 0; i < 30; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.top = '-10px';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      document.body.appendChild(el);
+      el.animate([
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: `translateY(100vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+      ], {
+        duration: 2000 + Math.random() * 1000,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      });
+      setTimeout(() => el.remove(), 3000);
+    }
+  }
+
+  // Chat
+  const mentors = {
+    zara: { name: 'Zara - The Strategist', emoji: '🧠', color: 'var(--gradient-1)' },
+    max: { name: 'Max - The Product Hunter', emoji: '💎', color: 'var(--gradient-2)' },
+    luna: { name: 'Luna - The Creative', emoji: '🎨', color: 'var(--gradient-3)' },
+    tech: { name: 'Tech - The Builder', emoji: '⚙️', color: 'var(--gradient-4)' }
+  };
+
+  let currentMentor = 'zara';
+  const responses = {
+    zara: [
+      "Great question! 🎯 The #1 thing teen dropshippers get wrong is picking boring products. You want something that solves a problem AND looks good on camera for TikTok.",
+      "For your first $1000, focus on ONE product, ONE platform. Master TikTok organic first - it's free and you can hit $1k in 30 days without spending on ads.",
+      "Best niches for 2025? Pet products, AI gadgets, home organization, and aesthetic wellness. All have huge margins and viral potential.",
+      "Start with $5-10/day on Meta ads. Test 5 creatives, kill the losers after $20 spend, scale winners. Budget $200-500 to learn."
+    ],
+    max: [
+      "I just found a wild product! 🛍️ It's a pet water bottle that shows hydration levels. $4 cost, sells for $24.99, and 12k orders this month. Want me to add it?",
+      "TikTok viral signals to look for: 500k+ views in 3 days, lots of stitch/duet activity, and ZERO paid promotion. That's your gold!",
+      "Use the 'TikTok Made Me Buy It' hashtag to spot trends. Then check if it's saturated on Amazon. If under 1000 reviews - you're golden.",
+      "My favorite product hunting trick: Search AliExpress by orders. Sort by 1000+ orders. These are PROVEN winners."
+    ],
+    luna: [
+      "For TikTok content that converts, follow the 3-second hook rule. If you don't grab attention in 3 seconds, swipe. 😤",
+      "Your brand colors should match your target audience's vibe. Pastel for Gen Z girls, dark/moody for tech bros, earthy for wellness.",
+      "UGC content beats polished ads 3:1. Film on your phone, talk naturally, show the product in real life. Authenticity wins! ✨",
+      "Need a logo? Tell me your vibe and I'll describe one you can recreate in Canva in 5 minutes."
+    ],
+    tech: [
+      "Building a Shopify store? Use the Dawn theme - free, fast, and converts 2.5% on average. Don't waste money on premium themes yet.",
+      "Install these apps: Klaviyo (email), Loox (reviews), ReConvert (upsells). They pay for themselves in week 1.",
+      "Set up your FB pixel BEFORE running ads. Without it, you're burning money. Also add TikTok pixel if you plan to run TT ads.",
+      "Want automation? Use Make.com (free tier) to connect your store + email + ads. I can build you a workflow in 10 min."
+    ]
+  };
+
+  function switchMentor(mentor, el) {
+    currentMentor = mentor;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const m = mentors[mentor];
+    document.querySelector('.chat-mentor-avatar').textContent = m.emoji;
+    document.querySelector('.chat-mentor-info h3').textContent = m.name;
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML = `<div class="chat-msg bot">Hey! 👋 I'm ${m.name}. ${m.emoji} How can I help you crush it today?</div>`;
+  }
+
+  function sendQuick(text) {
+    addMessage(text, 'user');
+    setTimeout(() => respond(text), 800);
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('chat-input-field');
+    const text = input.value.trim();
+    if (!text) return;
+    addMessage(text, 'user');
+    input.value = '';
+    setTimeout(() => respond(text), 800);
+  }
+
+  function addMessage(text, type) {
+    const messages = document.getElementById('chat-messages');
+    const msg = document.createElement('div');
+    msg.className = `chat-msg ${type}`;
+    msg.textContent = text;
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function respond(userText) {
+    const replies = responses[currentMentor];
+    const reply = replies[Math.floor(Math.random() * replies.length)];
+    addMessage(reply, 'bot');
+  }
+
+  function addProduct() {
+    showToast('Product added! +50 XP 🎉');
+    confetti();
+  }
+
+  // Initial nav indicator fix
+  document.querySelectorAll('.nav-item').forEach((item, idx) => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // Bottom nav for default
+  document.querySelector('.nav-item').addEventListener('click', function() {
+    const pages = ['home', 'steps', 'products', 'chat', 'profile'];
+  });
+
+  // Service Worker registration (PWA ready)
+  if ('serviceWorker' in navigator) {
+    // Would register here in production
+  }
+
+  // Welcome toast
+  setTimeout(() => {
+    showToast('Welcome to DropTeen! 🚀');
+  }, 500);
+</script>
+</body>
+</html>
